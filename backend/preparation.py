@@ -243,6 +243,69 @@ def _update_consent_in_db(user_name: str, bank_name: str, new_consent_id: str | 
     conn.commit()
     conn.close() 
 
+# Заполняем номера счетов в БД (после проверок валидности consent_id)
+def fetch_and_store_accounts(user_name: str, your_bank_id: str = "team089", db_path: str = "users.db"):
+    """
+    Запрашивает список счетов у всех активных банков пользователя,
+    где consent_id начинается с 'consent-', и сохраняет accountId в БД.
+    """
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Получаем активные банки с валидным consent_id
+    cursor.execute("""
+        SELECT bank_name, consent_id
+        FROM user_banks
+        WHERE user_name = ? AND is_active = 1 
+          AND consent_id IS NOT NULL 
+          AND consent_id LIKE 'consent-%'
+    """, (user_name,))
+    
+    valid_banks = cursor.fetchall()
+    conn.close()
+
+    if not valid_banks:
+        return
+
+    for bank_name, consent_id in valid_banks:
+        try:
+            base_url = f"https://{bank_name}.open.bankingapi.ru"
+            
+            # Запрашиваем счета
+            response = GetAccountsList(
+                client_id=user_name,
+                consent_id=consent_id,
+                x_requesting_bank=your_bank_id,
+                base_url=base_url
+            )
+
+            # Извлекаем accountId из ответа
+            accounts_data = response.get("data", {}).get("account", [])
+            account_ids = [acc.get("accountId") for acc in accounts_data if acc.get("accountId")]
+
+            # Сохраняем как JSON-строку (или NULL, если счетов нет)
+            account_ids_json = json.dumps(account_ids, ensure_ascii=False) if account_ids else None
+
+            # Обновляем БД
+            _update_account_ids_in_db(user_name, bank_name, account_ids_json, db_path)
+            print(f"✅ Сохранено {len(account_ids)} счёт(ов) для банка {bank_name}: {account_ids}")
+
+        except Exception as e:
+            print(f"❌ Ошибка при получении счетов для банка {bank_name}: {e}")
+            continue
+
+def _update_account_ids_in_db(user_name: str, bank_name: str, account_ids_json: str | None, db_path: str):
+    """Вспомогательная функция для обновления account_id в БД."""
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE user_banks
+        SET account_id = ?
+        WHERE user_name = ? AND bank_name = ?
+    """, (account_ids_json, user_name, bank_name))
+    conn.commit()
+    conn.close()
+
 # Для дебага: печатает содержимое БД пользователя по имени
 def print_user_banks_info(user_name: str, db_path: str = "users.db"):
     """
