@@ -138,3 +138,4 @@ def previous_transactions_to_best_cashbacks(transactions_name='Expenses.xlsx', c
 
 print(previous_transactions_to_best_cashbacks())
 
+
