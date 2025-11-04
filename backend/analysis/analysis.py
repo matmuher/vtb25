@@ -136,6 +136,8 @@ def previous_transactions_to_best_cashbacks(transactions_name='Expenses.xlsx', c
     return choose_best_cashback(prediction_model(transactions, month), cashbacks)
 
 
-print(previous_transactions_to_best_cashbacks())
+if __name__ == "__main__":
+    print(previous_transactions_to_best_cashbacks())
+
 
 
