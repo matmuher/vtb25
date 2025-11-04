@@ -74,6 +74,31 @@ def AccountConsentsRequest(
     response.raise_for_status()  # вызовет исключение при HTTP ошибке
     return response.json()
 
+# 1.2
+def GetConsentByID(
+    consent_id: str,
+    x_fapi_interaction_id: str = "team089",
+    base_url: str = "https://sbank.open.bankingapi.ru"
+) -> dict:
+    """
+    Получает информацию о согласии по его идентификатору.
+
+    :param consent_id: Идентификатор согласия (например, "req-bfcddced4b19")
+    :param x_fapi_interaction_id: Значение заголовка X-Fapi-Interaction-Id (по умолчанию "team089")
+    :param base_url: Базовый URL API (по умолчанию для sbank)
+    :return: Ответ от сервера в виде словаря (JSON)
+    :raises: requests.HTTPError — при ошибках HTTP
+    """
+    url = f"{base_url}/account-consents/{consent_id}"
+    headers = {
+        "accept": "application/json",
+        "x-fapi-interaction-id": x_fapi_interaction_id
+    }
+
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.json()
+
 # 2.1
 def GetAccountsList(
     client_id: str,
