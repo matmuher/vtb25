@@ -1,8 +1,9 @@
 import sqlite3
-from typing import List
 from VTBAPI_Requests import *
 from datetime import datetime, timezone
 from typing import Optional
+import json
+from typing import List, Dict, Any
 
 # Помещаем банки в БД
 def sync_user_banks(user_name: str, bank_list: List[str], db_path: str = "users.db"):
@@ -305,6 +306,95 @@ def _update_account_ids_in_db(user_name: str, bank_name: str, account_ids_json: 
     """, (account_ids_json, user_name, bank_name))
     conn.commit()
     conn.close()
+
+# Собираем транзакции из всех банков
+def fetch_all_transactions(
+    user_name: str,
+    from_date: str = "2025-01-01T00:00:00Z",
+    to_date: str = "2025-12-31T23:59:59Z",
+    your_bank_id: str = "team089",
+    db_path: str = "users.db",
+    page_size: int = 100
+) -> List[Dict[str, Any]]:
+    """
+    Получает ВСЕ транзакции пользователя со всех его счетов во всех подключённых банках,
+    с поддержкой пагинации.
+    
+    :param user_name: Имя пользователя
+    :param from_date: Начало периода (ISO 8601, UTC)
+    :param to_date: Конец периода (ISO 8601, UTC)
+    :param your_bank_id: Идентификатор вашего банка (для заголовков)
+    :param db_path: Путь к SQLite базе
+    :param page_size: Количество транзакций на странице (по умолчанию 100)
+    :return: Список всех транзакций с мета-полями _bank_name и _account_id
+    """
+    all_transactions = []
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Получаем активные банки с валидным consent_id и непустым account_id
+    cursor.execute("""
+        SELECT bank_name, consent_id, account_id
+        FROM user_banks
+        WHERE user_name = ? AND is_active = 1
+          AND consent_id IS NOT NULL AND consent_id LIKE 'consent-%'
+          AND account_id IS NOT NULL
+    """, (user_name,))
+    
+    bank_rows = cursor.fetchall()
+    conn.close()
+
+    for bank_name, consent_id, account_ids_json in bank_rows:
+        try:
+            account_ids = json.loads(account_ids_json)
+        except (json.JSONDecodeError, TypeError):
+            print(f"⚠️ Некорректный account_id для банка {bank_name}: {account_ids_json}")
+            continue
+
+        if not account_ids:
+            continue
+
+        base_url = f"https://{bank_name}.open.bankingapi.ru"
+
+        for acc_id in account_ids:
+            page = 1
+            while True:
+                try:
+                    response = GetAccountTransactionHistory(
+                        account_id=acc_id,
+                        consent_id=consent_id,
+                        from_booking_date_time=from_date,
+                        to_booking_date_time=to_date,
+                        page=page,
+                        limit=page_size,
+                        x_requesting_bank=your_bank_id,
+                        base_url=base_url
+                    )
+
+                    transactions = response.get("data", {}).get("transaction", [])
+                    if not transactions:
+                        break  # Больше нет данных
+
+                    # Добавляем мета-информацию
+                    for tx in transactions:
+                        tx["_bank_name"] = bank_name
+                        tx["_account_id"] = acc_id
+
+                    all_transactions.extend(transactions)
+                    print(f"✅ Страница {page}: получено {len(transactions)} транзакций по счёту {acc_id} в {bank_name}")
+
+                    # Если получено меньше, чем limit — значит, это последняя страница
+                    if len(transactions) < page_size:
+                        break
+
+                    page += 1
+
+                except Exception as e:
+                    print(f"❌ Ошибка на странице {page} для счёта {acc_id} в {bank_name}: {e}")
+                    break  # Прерываем пагинацию для этого счёта
+
+    return all_transactions
 
 # Для дебага: печатает содержимое БД пользователя по имени
 def print_user_banks_info(user_name: str, db_path: str = "users.db"):
