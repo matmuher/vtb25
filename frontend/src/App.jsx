@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, ChevronUp, Search, Check, X, ArrowLeft, Star, Info, AlertTriangle, ExternalLink, AlertCircle, AlertOctagon, Trash2, CreditCard, TrendingUp, Wallet, RefreshCw } from "lucide-react";
 
 // Constants
-// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 const CONSENTS = [
   { id: 'read_cashbacks', label: "Read personal cashbacks" },
   { id: 'choose_cashbacks', label: "Choose cashbacks" },
@@ -591,7 +591,7 @@ export default function App() {
         },
         body: JSON.stringify({
           user_login: login,
-          selected_banks: chosenBanks.map(bank => bank.name)
+          selected_banks: chosenBanks.map(bank => bank.name.toLowerCase())
         }),
       });
       
@@ -602,9 +602,11 @@ export default function App() {
       
       const data = await response.json();
       
+      console.log(data)
+
       const newConsents = { ...bankConsents };
       data.statuses.forEach(status => {
-        const bank = chosenBanks.find(b => b.name === status.bank_name);
+        const bank = chosenBanks.find(b => b.name.toLowerCase() === status.bank_name);
         if (bank) {
           newConsents[bank.id] = {
             ...newConsents[bank.id],
