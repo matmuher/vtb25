@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, ChevronUp, Search, Check, X, ArrowLeft, Star, Info, AlertTriangle, ExternalLink, AlertCircle, AlertOctagon, Trash2, CreditCard, TrendingUp, Wallet } from "lucide-react";
 
 // Constants
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
 const CONSENTS = [
   { id: 'read_cashbacks', label: "Read personal cashbacks" },
   { id: 'choose_cashbacks', label: "Choose cashbacks" },
@@ -519,10 +521,37 @@ export default function App() {
   };
 
   // Navigation handlers
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (login && password) {
-      setCurrentPage('bank-selection');
+
+    if (!login || !password) {
+      alert("Please enter both login and password.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          login: login,
+          password: password
+        }),
+      });
+
+      if (response.ok) {
+        console.log("Login successful from backend");
+        setCurrentPage('bank-selection');
+      } else {
+        const errorData = await response.json();
+        console.error("Login failed:", response.status, errorData.detail || "Invalid credentials or server error");
+        alert(errorData.detail || "Login failed. Please check your credentials.");
+      }
+    } catch (error) {
+      console.error("Network error or error parsing response:", error);
+      alert("Could not connect to the server. Please try again later.");
     }
   };
 
