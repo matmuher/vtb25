@@ -1,6 +1,8 @@
 from VTBAPI_Requests import *
 
 def example():
+    # 0. С фронта получаем токен
+    accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZWFtMDg5IiwiY2xpZW50X2lkIjoidGVhbTA4OSIsInR5cGUiOiJ0ZWFtIiwiaXNzIjoiYWJhbmsiLCJhdWQiOiJvcGVuYmFua2luZyIsImV4cCI6MTc2Mjc2NDY5OX0.pxeMjwZa5xO1dJ_SNVLLZTTOUIK85u28xPQ64lGDD5I";
     # 1. Создаём согласие на доступ к данным
     print("🔹 Создание согласия...")
     consent_response = AccountConsentsRequest(
@@ -9,7 +11,8 @@ def example():
         reason="Анализ финансовой активности",
         requesting_bank="team089",
         requesting_bank_name="Team 089 Bank",
-        x_requesting_bank="team089"
+        x_requesting_bank="team089",
+        access_token=accessToken
     )
 
     consent_id = consent_response.get("consent_id")
@@ -23,7 +26,8 @@ def example():
     accounts_response = GetAccountsList(
         client_id="team089-1",
         consent_id=consent_id,
-        x_requesting_bank="team089"
+        x_requesting_bank="team089",
+        access_token=accessToken
     )
 
     accounts = accounts_response.get("data", {}).get("account", [])
@@ -53,7 +57,8 @@ def example():
         to_booking_date_time=to_date,
         page=1,
         limit=100,
-        x_requesting_bank="team089"
+        x_requesting_bank="team089",
+        access_token=accessToken
     )
 
     transactions = transactions_response.get("data", {}).get("transaction", [])
@@ -73,3 +78,5 @@ def example():
 
 if __name__ == "__main__":
     example()
+    #consent_info = GetConsentByID("req-bfcddced4b19")
+    #print("Согласие:", consent_info)

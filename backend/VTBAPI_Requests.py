@@ -39,6 +39,8 @@ def AccountConsentsRequest(
     requesting_bank: str = "test_bank",
     requesting_bank_name: str = "Test Bank",
     x_requesting_bank: str = "team089",
+    access_token: str = "",
+    token_type: str = "Bearer",
     base_url: str = "https://abank.open.bankingapi.ru"
 ) -> dict:
     """
@@ -50,6 +52,8 @@ def AccountConsentsRequest(
     :param requesting_bank: Идентификатор запрашивающего банка
     :param requesting_bank_name: Название запрашивающего банка
     :param x_requesting_bank: Значение заголовка X-Requesting-Bank
+    :param access_token: Токен доступа для авторизации
+    :param token_type: Тип токена (по умолчанию "Bearer")
     :param base_url: Базовый URL API (по умолчанию — продакшн-эндпоинт)
     :return: Ответ от сервера в виде словаря (JSON)
     :raises: requests.HTTPError — при ошибках HTTP
@@ -59,7 +63,8 @@ def AccountConsentsRequest(
     headers = {
         "accept": "application/json",
         "x-requesting-bank": x_requesting_bank,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": f"{token_type} {access_token}"
     }
 
     payload = {
@@ -74,11 +79,43 @@ def AccountConsentsRequest(
     response.raise_for_status()  # вызовет исключение при HTTP ошибке
     return response.json()
 
+# 1.2
+def GetConsentByID(
+    consent_id: str,
+    x_fapi_interaction_id: str = "team089",
+    access_token: str = "",
+    token_type: str = "Bearer",
+    base_url: str = "https://sbank.open.bankingapi.ru"
+) -> dict:
+    """
+    Получает информацию о согласии по его идентификатору.
+
+    :param consent_id: Идентификатор согласия (например, "req-bfcddced4b19")
+    :param x_fapi_interaction_id: Значение заголовка X-Fapi-Interaction-Id (по умолчанию "team089")
+    :param access_token: Токен доступа для авторизации
+    :param token_type: Тип токена (по умолчанию "Bearer")
+    :param base_url: Базовый URL API (по умолчанию для sbank)
+    :return: Ответ от сервера в виде словаря (JSON)
+    :raises: requests.HTTPError — при ошибках HTTP
+    """
+    url = f"{base_url}/account-consents/{consent_id}"
+    headers = {
+        "accept": "application/json",
+        "x-fapi-interaction-id": x_fapi_interaction_id,
+        "Authorization": f"{token_type} {access_token}"
+    }
+
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.json()
+
 # 2.1
 def GetAccountsList(
     client_id: str,
     consent_id: str,
     x_requesting_bank: str = "team089",
+    access_token: str = "",
+    token_type: str = "Bearer",
     base_url: str = "https://abank.open.bankingapi.ru"
 ) -> dict:
     """
@@ -87,6 +124,8 @@ def GetAccountsList(
     :param client_id: Идентификатор клиента (например, "team089-1")
     :param consent_id: Идентификатор согласия (например, "consent-2e079bcd17b1")
     :param x_requesting_bank: Значение заголовка X-Requesting-Bank (по умолчанию "team089")
+    :param access_token: Токен доступа для авторизации
+    :param token_type: Тип токена (по умолчанию "Bearer")
     :param base_url: Базовый URL API
     :return: Ответ от сервера в виде словаря (JSON)
     :raises: requests.HTTPError — при ошибках HTTP
@@ -96,7 +135,8 @@ def GetAccountsList(
     headers = {
         "accept": "application/json",
         "x-consent-id": consent_id,
-        "x-requesting-bank": x_requesting_bank
+        "x-requesting-bank": x_requesting_bank,
+        "Authorization": f"{token_type} {access_token}"
     }
 
     response = requests.get(url, params=params, headers=headers)
@@ -108,6 +148,8 @@ def GetAccountDetails(
     account_id: str,
     consent_id: str,
     x_requesting_bank: str = "team089",
+    access_token: str = "",
+    token_type: str = "Bearer",
     base_url: str = "https://abank.open.bankingapi.ru"
 ) -> dict:
     """
@@ -116,6 +158,8 @@ def GetAccountDetails(
     :param account_id: Идентификатор счёта (например, "acc-1981")
     :param consent_id: Идентификатор согласия (например, "consent-2e079bcd17b1")
     :param x_requesting_bank: Значение заголовка X-Requesting-Bank (по умолчанию "team089")
+    :param access_token: Токен доступа для авторизации
+    :param token_type: Тип токена (по умолчанию "Bearer")
     :param base_url: Базовый URL API
     :return: Ответ от сервера в виде словаря (JSON)
     :raises: requests.HTTPError — при ошибках HTTP
@@ -124,7 +168,8 @@ def GetAccountDetails(
     headers = {
         "accept": "application/json",
         "x-consent-id": consent_id,
-        "x-requesting-bank": x_requesting_bank
+        "x-requesting-bank": x_requesting_bank,
+        "Authorization": f"{token_type} {access_token}"
     }
 
     response = requests.get(url, headers=headers)
@@ -136,6 +181,8 @@ def GetAccountBalance(
     account_id: str,
     consent_id: str,
     x_requesting_bank: str = "team089",
+    access_token: str = "",
+    token_type: str = "Bearer",
     base_url: str = "https://abank.open.bankingapi.ru"
 ) -> dict:
     """
@@ -144,6 +191,8 @@ def GetAccountBalance(
     :param account_id: Идентификатор счёта (например, "acc-1981")
     :param consent_id: Идентификатор согласия (например, "consent-2e079bcd17b1")
     :param x_requesting_bank: Значение заголовка X-Requesting-Bank (по умолчанию "team089")
+    :param access_token: Токен доступа для авторизации
+    :param token_type: Тип токена (по умолчанию "Bearer")
     :param base_url: Базовый URL API
     :return: Ответ от сервера в виде словаря (JSON)
     :raises: requests.HTTPError — при ошибках HTTP
@@ -152,7 +201,8 @@ def GetAccountBalance(
     headers = {
         "accept": "application/json",
         "x-consent-id": consent_id,
-        "x-requesting-bank": x_requesting_bank
+        "x-requesting-bank": x_requesting_bank,
+        "Authorization": f"{token_type} {access_token}"
     }
 
     response = requests.get(url, headers=headers)
@@ -168,6 +218,8 @@ def GetAccountTransactionHistory(
     page: int = 1,
     limit: int = 50,
     x_requesting_bank: str = "team089",
+    access_token: str = "",
+    token_type: str = "Bearer",
     base_url: str = "https://abank.open.bankingapi.ru"
 ) -> dict:
     """
@@ -180,6 +232,8 @@ def GetAccountTransactionHistory(
     :param page: Номер страницы (по умолчанию 1)
     :param limit: Количество транзакций на странице (по умолчанию 50)
     :param x_requesting_bank: Значение заголовка X-Requesting-Bank (по умолчанию "team089")
+    :param access_token: Токен доступа для авторизации
+    :param token_type: Тип токена (по умолчанию "Bearer")
     :param base_url: Базовый URL API
     :return: Ответ от сервера в виде словаря (JSON)
     :raises: requests.HTTPError — при ошибках HTTP
@@ -196,7 +250,8 @@ def GetAccountTransactionHistory(
     headers = {
         "accept": "application/json",
         "x-consent-id": consent_id,
-        "x-requesting-bank": x_requesting_bank
+        "x-requesting-bank": x_requesting_bank,
+        "Authorization": f"{token_type} {access_token}"
     }
 
     response = requests.get(url, headers=headers, params=params)
