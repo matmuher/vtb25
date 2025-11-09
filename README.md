@@ -19,7 +19,9 @@
 | bank  | category  | percent | max_categories_in_bank | category_limit | bank_limit |
 |-------|-----------|---------|------------------------|----------------|------------|
 | Sbank | Hair Cut  | 5       | 3                      |                | 3000       |
+
 Формат credentials.json:
+
 [
     {
         "bank_name": "abank",
