@@ -41,8 +41,8 @@ def init_db():
     conn.close()
 
 def hash_password(password: str) -> str:
-    """Hash a password using SHA-256."""
-    return hashlib.sha256(password.encode()).hexdigest()
+    """Hash a password using SHA-512."""
+    return hashlib.sha512(password.encode()).hexdigest()
 
 def verify_user(login: str, password: str) -> bool:
     """Verify user credentials against the database."""
