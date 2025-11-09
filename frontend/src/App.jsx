@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, ChevronUp, Search, Check, X, ArrowLeft, Star, Info, AlertTriangle, ExternalLink, AlertCircle, AlertOctagon, Trash2, CreditCard, TrendingUp, Wallet } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, Check, X, ArrowLeft, Star, Info, AlertTriangle, ExternalLink, AlertCircle, AlertOctagon, Trash2, CreditCard, TrendingUp, Wallet, RefreshCw } from "lucide-react";
 
 // Constants
 // const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
@@ -27,7 +27,7 @@ const BANK_CASHBACKS = {
       { id: 1, category: "Travel", cashback: "8%", recommended: true, description: "8% cashback on flights, hotels, car rentals, and travel booking platforms." },
       { id: 2, category: "Dining", cashback: "6%", recommended: true, description: "6% cashback at restaurants, cafes, bars, and food delivery apps." },
       { id: 3, category: "Entertainment", cashback: "4%", recommended: true, description: "4% cashback on movies, concerts, sporting events, and entertainment subscriptions." },
-      { id: 4, category: "Shopping", cashback: "3%", recommended: false, description: "3% cashback on department stores, clothing, and general retail purchases." },
+      { id: 4, category: "Shopping", cashback: "3%", recommended: false, description: "3% cashback on department store and retail purchases." },
       { id: 5, category: "Utilities", cashback: "2%", recommended: false, description: "2% cashback on electricity, water, internet, and phone bills." },
       { id: 6, category: "Streaming", cashback: "5%", recommended: false, description: "5% cashback on Netflix, Spotify, Disney+, and other streaming subscriptions." }
     ]
@@ -378,6 +378,7 @@ export default function App() {
   const [isAnalyzed, setIsAnalyzed] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAnalyzingForConfirmation, setIsAnalyzingForConfirmation] = useState(false);
+  const [isUpdatingConsents, setIsUpdatingConsents] = useState(false);
   const dropdownContainerRef = useRef(null);
   const historyDropdownContainerRef = useRef(null);
   const dropdownTimeoutRef = useRef(null);
@@ -572,6 +573,67 @@ export default function App() {
           [bankName]: [...currentSelected, cashbackId]
         }));
       }
+    }
+  };
+
+  // Update consent statuses from backend
+  const updateConsentStatuses = async () => {
+    if (chosenBanks.length === 0) return;
+    
+    setIsUpdatingConsents(true);
+    
+    try {
+      // In a real implementation, this would be the actual API call:
+      const response = await fetch(`${API_BASE_URL}/api/select_banks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_login: login,
+          selected_banks: chosenBanks.map(bank => bank.name)
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error("Failed to update consent statuses");
+        return;
+      }
+      
+      const data = await response.json();
+      
+      const newConsents = { ...bankConsents };
+      data.statuses.forEach(status => {
+        const bank = chosenBanks.find(b => b.name === status.bank_name);
+        if (bank) {
+          newConsents[bank.id] = {
+            ...newConsents[bank.id],
+            approved: status.status === "authorized"
+          };
+        }
+      });
+      
+      setBankConsents(newConsents);
+      
+      // Mock implementation for demonstration
+      // await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // // For demonstration, we'll update statuses randomly
+      // const newConsents = { ...bankConsents };
+      // chosenBanks.forEach(bank => {
+      //   // Simulate backend response - some banks might be approved, others not
+      //   const isApproved = Math.random() > 0.3; // 70% chance of approval for demo
+      //   newConsents[bank.id] = {
+      //     ...newConsents[bank.id],
+      //     approved: isApproved
+      //   };
+      // });
+      
+      // setBankConsents(newConsents);
+    } catch (error) {
+      console.error("Failed to update consent statuses:", error);
+    } finally {
+      setIsUpdatingConsents(false);
     }
   };
 
@@ -1140,12 +1202,25 @@ export default function App() {
           ) : (
             <>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 shadow-md border border-white/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-white text-xl">🏦</span>
-                  <span className="text-white font-medium">Cashback per bank</span>
-                  {hasIncompleteConsents(chosenBanks, bankConsents) && (
-                    <AlertOctagon className="w-4 h-4 text-yellow-400" />
-                  )}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white text-xl">🏦</span>
+                    <span className="text-white font-medium">Cashback per bank</span>
+                    {hasIncompleteConsents(chosenBanks, bankConsents) && (
+                      <AlertOctagon className="w-4 h-4 text-yellow-400" />
+                    )}
+                  </div>
+                  <button
+                    onClick={updateConsentStatuses}
+                    disabled={isUpdatingConsents}
+                    className="text-white hover:text-gray-300 disabled:opacity-50"
+                  >
+                    {isUpdatingConsents ? (
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-5 h-5" />
+                    )}
+                  </button>
                 </div>
                 <div className="max-h-60 overflow-y-auto space-y-2">
                   {chosenBanks.length > 0 ? (
