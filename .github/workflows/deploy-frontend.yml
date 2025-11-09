@@ -9,7 +9,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Deploy to server
       run: |
-        ssh -l ${{ secrets.USER }} ${{ secrets.SERVER_IP }} "
+        ssh -vvv -l ${{ secrets.USER }} ${{ secrets.SERVER_IP }} "
           cd ~/vtb25 &&
           git checkout master &&
           git pull origin master &&
