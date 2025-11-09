@@ -72,6 +72,7 @@ def get_active_banks(user_name: str, db_path: str = "users.db"):
 # Сделать запрос на получение согласия у активных банков, у которых consent_id=NULL
 def update_missing_consents(
     user_name: str,
+    acc_token: str,
     requesting_bank: str = "team089",  # ваш банк-инициатор
     db_path: str = "users.db"
 ):
@@ -109,6 +110,7 @@ def update_missing_consents(
                 requesting_bank=requesting_bank,          # например, "team089"
                 requesting_bank_name="Team 089 Bank",
                 x_requesting_bank=requesting_bank,        # "team089"
+                access_token=acc_token,
                 base_url=base_url                         # ← ключевое: URL целевого банка
             )
 
@@ -146,7 +148,7 @@ def waiting_for_approval(user_name: str, bank_name: str, consent_id: str):
     print(f"⏳ Согласие {consent_id} для банка {bank_name} пользователя {user_name} ожидает подтверждения.")
 
 # После этой функции повторно запускаем update_missing_consents для обработки случая истечения сроков согласия
-def refresh_user_consents(user_name: str, your_bank_id: str = "team089", db_path: str = "users.db"):
+def refresh_user_consents(user_name: str, acc_token: str, your_bank_id: str = "team089", db_path: str = "users.db"):
     """
     Проверяет статус согласий для **всех активных банков** пользователя, у которых есть consent_id.
     Поддерживает:
@@ -178,6 +180,7 @@ def refresh_user_consents(user_name: str, your_bank_id: str = "team089", db_path
             response = GetConsentByID(
                 consent_id=consent_id,
                 x_fapi_interaction_id=your_bank_id,
+                access_token=acc_token,
                 base_url=base_url
             )
 
@@ -245,7 +248,7 @@ def _update_consent_in_db(user_name: str, bank_name: str, new_consent_id: str | 
     conn.close() 
 
 # Заполняем номера счетов в БД (после проверок валидности consent_id)
-def fetch_and_store_accounts(user_name: str, your_bank_id: str = "team089", db_path: str = "users.db"):
+def fetch_and_store_accounts(user_name: str, acc_token: str, your_bank_id: str = "team089", db_path: str = "users.db"):
     """
     Запрашивает список счетов у всех активных банков пользователя,
     где consent_id начинается с 'consent-', и сохраняет accountId в БД.
@@ -277,6 +280,7 @@ def fetch_and_store_accounts(user_name: str, your_bank_id: str = "team089", db_p
                 client_id=user_name,
                 consent_id=consent_id,
                 x_requesting_bank=your_bank_id,
+                access_token=acc_token,
                 base_url=base_url
             )
 
@@ -310,6 +314,7 @@ def _update_account_ids_in_db(user_name: str, bank_name: str, account_ids_json: 
 # Собираем транзакции из всех банков
 def fetch_all_transactions(
     user_name: str,
+    acc_token: str,
     from_date: str = "2025-01-01T00:00:00Z",
     to_date: str = "2025-12-31T23:59:59Z",
     your_bank_id: str = "team089",
@@ -369,6 +374,7 @@ def fetch_all_transactions(
                         page=page,
                         limit=page_size,
                         x_requesting_bank=your_bank_id,
+                        access_token=acc_token,
                         base_url=base_url
                     )
 
