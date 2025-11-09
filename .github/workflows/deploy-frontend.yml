@@ -1,0 +1,19 @@
+name: Deploy
+on:
+  push:
+    branches: [ add-frontend ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Deploy to server
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.SERVER_IP }} "
+          cd ~/vtb25 &&
+          git pull &&
+          npm install &&
+          pm run dev -- --host 0.0.0.0 --port 3000
+        "
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
