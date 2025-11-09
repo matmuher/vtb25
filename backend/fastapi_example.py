@@ -6,6 +6,7 @@ from typing import Optional
 import sqlite3
 import hashlib
 import os
+from argon2 import PasswordHasher
 
 # --- Database Setup ---
 DB_NAME = "users.db"
@@ -41,18 +42,25 @@ def init_db():
     conn.close()
 
 def hash_password(password: str) -> str:
-    """Hash a password using SHA-512."""
-    return hashlib.sha512(password.encode()).hexdigest()
+    ph = PasswordHasher()
+    return ph.hash(password)
 
 def verify_user(login: str, password: str) -> bool:
     """Verify user credentials against the database."""
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    hashed_password = hash_password(password)
-    cursor.execute('SELECT 1 FROM users WHERE login = ? AND password = ?', (login, hashed_password))
-    result = cursor.fetchone()
-    conn.close()
-    return result is not None
+    
+    cursor.execute('SELECT password FROM users WHERE login = ?', (login,))
+    row = cursor.fetchone()
+
+    if row is None:
+        return False
+    stored_hash = row[0]
+    ph = PasswordHasher()
+    try:
+        return ph.verify(stored_hash, password)
+    except Exception:
+        return False
 
 # Initialize the database on startup
 init_db()
