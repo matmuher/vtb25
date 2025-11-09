@@ -1,15 +1,21 @@
 name: Deploy
 on:
   push:
-    branches: [ add-deploy, master ]
+    branches: [ master ]
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    
     - name: Deploy to server
       run: |
-        ssh -vvv -l ${{ secrets.USER }} ${{ secrets.SERVER_IP }} "
+        ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.SERVER_IP }} "
           cd ~/vtb25 &&
           git checkout master &&
           git pull origin master &&
