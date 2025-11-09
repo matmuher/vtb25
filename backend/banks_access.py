@@ -18,7 +18,7 @@ def parse_banks_json(file_path: str):
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
-        
+
         # Проверяем, что загруженный объект - это список
         if not isinstance(data, list):
             print(f"Ошибка: Ожидается JSON-массив, но получен {type(data).__name__}.")
@@ -49,6 +49,25 @@ def parse_banks_json(file_path: str):
     except Exception as e:
         print(f"Неизвестная ошибка при чтении файла {file_path}: {e}")
         return {}
+
+def ensure_table_exists():
+    """Создаёт таблицу tokens, если она не существует."""
+    conn = sqlite3.connect('bank_tokens.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bank_name TEXT NOT NULL,
+            access_token TEXT NOT NULL,
+            token_type TEXT NOT NULL,
+            client_id TEXT NOT NULL,
+            algorithm TEXT,
+            expires_in INTEGER,
+            add_time DATETIME NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
 def get_bank_access_token(bank: str, client_id: str, client_secret: str) -> bool:
     """
@@ -88,7 +107,7 @@ def get_bank_access_token(bank: str, client_id: str, client_secret: str) -> bool
         conn = sqlite3.connect('bank_tokens.db')
         cursor = conn.cursor()
 
-		# Создаём таблицу, если она не существует
+        # Создаём таблицу, если она не существует
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS tokens (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -130,6 +149,9 @@ def update_expired_tokens():
     Проверяет срок действия токенов в БД для поддерживаемых банков.
     Если токен истёк, вызывает get_bank_access_token для его обновления.
     """
+    # Ensure the table exists before any operations
+    ensure_table_exists()
+    
     # Получаем список поддерживаемых банков из словаря
     BANK_CREDENTIALS = parse_banks_json("credentials.json")
     supported_banks = BANK_CREDENTIALS.keys()
@@ -140,12 +162,12 @@ def update_expired_tokens():
 
         for bank in supported_banks:
             print(f"Проверяем токен для банка: {bank}")
-            
+
             # Получаем информацию о токене из БД
             cursor.execute('''
                 SELECT expires_in, add_time FROM tokens WHERE bank_name = ?
             ''', (bank,))
-            
+
             row = cursor.fetchone()
 
             if row:
@@ -162,7 +184,7 @@ def update_expired_tokens():
                     except ValueError:
                         # Если и это не сработает, пробуем без микросекунд
                         add_time = datetime.strptime(add_time_str, "%Y-%m-%d %H:%M:%S")
-                
+
                 # Вычисляем время истечения
                 expiration_time = add_time + timedelta(seconds=expires_in)
                 current_time = datetime.now()
@@ -211,6 +233,9 @@ def print_bank_tokens():
     """
     Подключается к базе данных SQLite и выводит все записи из таблицы 'tokens' в консоль.
     """
+    # Ensure the table exists before reading
+    ensure_table_exists()
+    
     try:
         # Подключаемся к базе данных
         conn = sqlite3.connect('bank_tokens.db')
@@ -247,3 +272,5 @@ def print_bank_tokens():
     except Exception as e:
         print(f"Неизвестная ошибка: {e}")
 
+update_expired_tokens()
+print_bank_tokens()
