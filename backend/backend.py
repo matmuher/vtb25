@@ -154,17 +154,17 @@ async def get_bank_status(user_login: str):
 @app.get("/api/analysis_results/{user_login}")
 async def get_analysis_results(user_login: str):
     logger.info(f"Fetching analysis results for user '{user_login}'")
-    if user_login not in user_analysis_results:
+    #if user_login not in user_analysis_results:
         # Проверяем, может быть анализ ещё не завершён?
         # В этой простой затычке, если результатов нет, но статусы есть, возвращаем пустой список.
-        if user_login in user_bank_auth_status:
+        #if user_login in user_bank_auth_status:
              # Или лучше вернуть ошибку, если ожидается результат?
              # raise HTTPException(status_code=204, detail="Analysis not ready or not started")
-             return {"results": []}
-        else:
-            raise HTTPException(status_code=404, detail="User not found or analysis not started")
+             #return {"results": []}
+        #else:
+            #raise HTTPException(status_code=404, detail="User not found or analysis not started")
 
-    results = user_analysis_results[user_login]
+    results = analyze_best_cashbacks(user_login)
     return {"results": results}
 
 
