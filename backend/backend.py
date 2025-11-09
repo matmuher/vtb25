@@ -5,6 +5,7 @@ import asyncio
 import random
 import logging
 import json
+from process_user import *
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -122,21 +123,7 @@ async def select_banks(request: BankSelectionRequest):
 
     logger.info(f"User '{user_login}' selected banks: {selected_banks}")
 
-    # Обновляем статусы банков для пользователя
-    user_bank_auth_status[user_login] = {bank: "pending" for bank in selected_banks}
-
-    # Запускаем процесс авторизации в фоне (для затычки - сразу)
-    # В реальной жизни тут будет асинхронный вызов внешних API
-    auth_results = mock_authorize_banks(selected_banks)
-    for result in auth_results:
-        if result.bank_name in user_bank_auth_status[user_login]:
-            user_bank_auth_status[user_login][result.bank_name] = result.status
-
-    # Возвращаем текущие статусы
-    current_statuses = [
-        BankStatus(bank_name=bank, status=status)
-        for bank, status in user_bank_auth_status[user_login].items()
-    ]
+    current_statuses = push_consents_to_banks(user_login, selected_banks) 
     return {"statuses": current_statuses}
 
 
