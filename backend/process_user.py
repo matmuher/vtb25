@@ -47,4 +47,5 @@ def analyze_best_cashbacks(user_name: str):
     transactions_data = fetch_all_transactions(user_name)
     l = extract_columns_from_excel("Cashbacks.xlsx")
     df = json_transactions_to_best_cashbacks(transactions_data, "Cashbacks.xlsx", "2025-10-01")
+    return process_dataframe_and_rules(df, l)
 
