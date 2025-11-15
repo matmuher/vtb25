@@ -41,11 +41,11 @@ class ConfirmationRequest(BaseModel):
     #confirmed_selections: List[Dict[str, str]] # e.g., [{"bank_name": "Sbank", "category": "PhilHealth"}]
 
 class TransactionInfo(BaseModel):
-    название_магазина: str
-    сумма_траты: float
-    какой_кешбек_получил: float
+    merchant: str
+    amount: float
+    cashback: float
     flag_is_optimal: bool
-    совет: str
+    hint: str
 
 # --- Глобальное хранилище (заменить на БД в проде) ---
 
@@ -315,11 +315,11 @@ async def confirm_cashbacks(request: ConfirmationRequest):
             categorized_transactions[category_raw] = []
         categorized_transactions[category_raw].append(
             TransactionInfo(
-                название_магазина=merchant_name,
-                сумма_траты=amount,
-                какой_кешбек_получил=cashback_received,
+                merchant=merchant_name,
+                amount=amount,
+                cashback=cashback_received,
                 flag_is_optimal=is_optimal,
-                совет=advice
+                hint=advice
             )
         )
 
