@@ -31,6 +31,7 @@ def has_expired_bank(statuses_list: list) -> bool:
     return any(item.get('status') == 'expired' for item in statuses_list if isinstance(item, dict))
 
 def push_consents_to_banks(user_name: str, banks_list: list):
+    update_expired_consents()
     sync_user_banks(user_name, banks_list)
     update_missing_consents(user_name)
     statuses_list = []

@@ -1,5 +1,6 @@
 import sqlite3
 from VTBAPI_Requests import *
+from banks_access import *
 from datetime import datetime, timezone
 from typing import Optional
 import json
@@ -230,6 +231,7 @@ def refresh_user_consents(
             if not acc_token:
                 print(f"⚠️ Не найден access_token для банка {bank_name}. Пропускаем проверку согласия.")
                 # Добавляем информацию о банке со статусом 'error' в список
+                _update_consent_in_db(user_name, bank_name, None, db_path)
                 statuses_list.append({
                     'bank_name': bank_name,
                     'status': 'error',
@@ -315,6 +317,7 @@ def refresh_user_consents(
         except Exception as e:
             print(f"❌ Ошибка при проверке согласия {consent_id} для банка {bank_name}: {e}")
             # Добавляем информацию о банке со статусом 'error' в список
+            _update_consent_in_db(user_name, bank_name, None, db_path)
             statuses_list.append({
                 'bank_name': bank_name,
                 'status': 'error',
