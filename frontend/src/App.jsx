@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, ChevronUp, Search, Check, X, ArrowLeft, Star, Info, AlertTriangle, ExternalLink, AlertCircle, AlertOctagon, Trash2, CreditCard, TrendingUp, Wallet, RefreshCw } from "lucide-react";
+import transactionsMock from './mock/transactions_new.json';
 
 // Constants
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
@@ -55,43 +56,6 @@ const ALL_BANKS = [
   { id: 23, name: "VBank", value: "44 $" },
   { id: 27, name: "ZBank", value: "1 $" }
 ];
-
-// Mock transaction data for cashback categories
-const CASHBACK_TRANSACTIONS = {
-  "Groceries": [
-    { id: 1, date: "2025-11-01", merchant: "Whole Foods", amount: 85.50, bank: "TBank", cashback: 4.28, optimal: true, optimalBank: "TBank", optimalCashback: 4.28 },
-    { id: 3, date: "2025-11-05", merchant: "Amazon Fresh", amount: 67.20, bank: "VBank", cashback: 4.03, optimal: true, optimalBank: "VBank", optimalCashback: 4.03 }
-  ],
-  "Gas": [
-    { id: 4, date: "2025-11-02", merchant: "Shell", amount: 45.80, bank: "SBank", cashback: 2.29, optimal: true, optimalBank: "SBank", optimalCashback: 2.29 },
-    { id: 5, date: "2025-11-06", merchant: "Chevron", amount: 38.90, bank: "TBank", cashback: 1.17, optimal: false, optimalBank: "SBank", optimalCashback: 1.95 }
-  ],
-  "Dining": [
-    { id: 6, date: "2025-11-01", merchant: "Olive Garden", amount: 78.40, bank: "SBank", cashback: 4.70, optimal: true, optimalBank: "SBank", optimalCashback: 4.70 },
-    { id: 7, date: "2025-11-04", merchant: "Chipotle", amount: 24.60, bank: "TBank", cashback: 0.74, optimal: false, optimalBank: "SBank", optimalCashback: 1.48 }
-  ],
-  "Travel": [
-    { id: 8, date: "2025-10-28", merchant: "Delta Airlines", amount: 342.00, bank: "SBank", cashback: 27.36, optimal: true, optimalBank: "SBank", optimalCashback: 27.36 },
-    { id: 9, date: "2025-11-07", merchant: "Booking.com", amount: 189.50, bank: "EBank", cashback: 11.37, optimal: true, optimalBank: "EBank", optimalCashback: 11.37 }
-  ],
-  "Entertainment": [
-    { id: 10, date: "2025-11-03", merchant: "AMC Theaters", amount: 32.80, bank: "SBank", cashback: 1.31, optimal: true, optimalBank: "SBank", optimalCashback: 1.31 },
-    { id: 11, date: "2025-11-05", merchant: "Spotify", amount: 10.99, bank: "VBank", cashback: 0.33, optimal: false, optimalBank: "SBank", optimalCashback: 0.44 }
-  ],
-  "Streaming": [
-    { id: 12, date: "2025-11-01", merchant: "Netflix", amount: 15.99, bank: "EBank", cashback: 0.64, optimal: true, optimalBank: "EBank", optimalCashback: 0.64 },
-    { id: 13, date: "2025-11-08", merchant: "Disney+", amount: 13.99, bank: "SBank", cashback: 0.70, optimal: true, optimalBank: "SBank", optimalCashback: 0.70 }
-  ],
-  "Utilities": [
-    { id: 14, date: "2025-11-02", merchant: "PG&E", amount: 124.50, bank: "VBank", cashback: 8.72, optimal: true, optimalBank: "VBank", optimalCashback: 8.72 },
-  ],
-  "Pharmacy": [
-    { id: 16, date: "2025-11-04", merchant: "CVS", amount: 45.20, bank: "VBank", cashback: 2.26, optimal: true, optimalBank: "VBank", optimalCashback: 2.26 }
-  ],
-  "Books": [
-    { id: 17, date: "2025-11-06", merchant: "Amazon", amount: 28.99, bank: "VBank", cashback: 1.16, optimal: true, optimalBank: "VBank", optimalCashback: 1.16 }
-  ]
-};
 
 // Helper Functions
 const getBankState = (bank, bankConsents) => {
@@ -315,6 +279,7 @@ export default function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAnalyzingForConfirmation, setIsAnalyzingForConfirmation] = useState(false);
   const [isUpdatingConsents, setIsUpdatingConsents] = useState(false);
+  const [cashbackTransactions, setCashbackTransactions] = useState({});
   const dropdownContainerRef = useRef(null);
   const historyDropdownContainerRef = useRef(null);
   const dropdownTimeoutRef = useRef(null);
@@ -633,6 +598,19 @@ export default function App() {
     }
   }, [chosenBanks, bankConsents, mainButtonState]);
 
+  useEffect(() => {
+    // Мок: загружаем из файла
+    setCashbackTransactions(transactionsMock);
+
+    // Для боевого использования с backend, раскомментируй:
+    /*
+    fetch(`${API_BASE_URL}/api/transactions`)
+      .then(res => res.json())
+      .then(data => setCashbackTransactions(data))
+      .catch(() => setCashbackTransactions(transactionsMock));
+    */
+  }, []);
+
   // Cleanup
   useEffect(() => {
     return () => {
@@ -650,8 +628,9 @@ export default function App() {
   // Calculate current income from categories
   const calculateCurrentIncome = () => {
     let total = 0;
-    Object.values(CASHBACK_TRANSACTIONS).forEach(transactions => {
+    Object.values(cashbackTransactions).forEach(transactions => {
       transactions.forEach(transaction => {
+        console.log(transaction);
         total += transaction.cashback;
       });
     });
@@ -661,7 +640,7 @@ export default function App() {
   // Get categories with cashback totals
   const getCategoryCashbacks = () => {
     const categories = {};
-    Object.entries(CASHBACK_TRANSACTIONS).forEach(([category, transactions]) => {
+    Object.entries(cashbackTransactions).forEach(([category, transactions]) => {
       const totalCashback = transactions.reduce((sum, transaction) => sum + transaction.cashback, 0);
       const totalSpent = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
       const optimalCount = transactions.filter(t => t.optimal).length;
@@ -678,7 +657,7 @@ export default function App() {
 
   const currentIncomeValue = calculateCurrentIncome();
   const categoryCashbacks = getCategoryCashbacks();
-  const allCategories = [...new Set(Object.values(BANK_CASHBACKS).flatMap(bank => bank.cashbacks.map(c => c.category)))];
+  const allCategories = cashbackTransactions ? Object.keys(cashbackTransactions) : [];
 
   // Screens
   if (currentPage === 'auth') {
@@ -855,7 +834,7 @@ export default function App() {
   }
 
   if (currentPage === 'category-transactions') {
-    const transactions = CASHBACK_TRANSACTIONS[selectedCategory] || [];
+    const transactions = cashbackTransactions?.[selectedCategory] || [];
     const totalCashback = transactions.reduce((sum, t) => sum + t.cashback, 0);
     const totalSpent = transactions.reduce((sum, t) => sum + t.amount, 0);
     return (
@@ -891,7 +870,7 @@ export default function App() {
                       )}
                     </div>
                     <p className="text-gray-400 text-sm mt-1">
-                      {new Date(transaction.date).toLocaleDateString()} • {transaction.amount.toFixed(2)}$
+                      Date: {transaction.date}
                     </p>
                     <p className="text-gray-400 text-sm mt-1">
                       Bank: {transaction.bank}
@@ -904,7 +883,7 @@ export default function App() {
                     {!transaction.optimal && (
                       <div className="text-right">
                         <p className="text-gray-400 text-xs">
-                          If pay with {transaction.optimalBank}, would be +{transaction.optimalCashback.toFixed(2)}$
+                          {transaction.hint}
                         </p>
                       </div>
                     )}
