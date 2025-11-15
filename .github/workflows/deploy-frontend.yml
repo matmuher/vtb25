@@ -1,7 +1,7 @@
 name: Deploy
 on:
   push:
-    branches: [ master, add-deploy-back ]
+    branches: [ master, add-back-deploy ]
 jobs:
   deploy:
     runs-on: ubuntu-latest
