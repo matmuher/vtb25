@@ -1041,7 +1041,7 @@ export default function App() {
               onClick={handleConfirmClick}
               className="bg-gray-500 text-white font-bold py-6 px-6 rounded-3xl shadow-lg text-xl flex items-center justify-center w-full max-w-md mx-auto cursor-pointer"
             >
-              Pls, approve consents ✍🏻
+              Pls, approve consents ⏳ 🔍
             </button>
           )}
           {mainButtonState === 'analyze' && (
