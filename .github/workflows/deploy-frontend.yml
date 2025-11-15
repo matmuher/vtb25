@@ -19,8 +19,19 @@ jobs:
           cd ~/vtb25 &&
           git checkout master &&
           git pull origin master &&
+          
+          # Install backend dependencies using the specific venv
+          cd backend &&
+          ~/vtb25/backend/venv/bin/pip install -r requirements.txt &&
+          cd .. &&
+          
+          # Build frontend and install serve
           cd frontend &&
           npm install &&
+          npm install -g serve &&
           npm run build &&
-          pm2 reload vtb25 || pm2 start ecosystem.config.cjs
+          cd .. &&
+          
+          # Restart all services using single ecosystem file
+          pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
         "
