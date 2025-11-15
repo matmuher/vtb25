@@ -437,8 +437,6 @@ export default function App() {
   const handleCashbackToggle = (bankName, cashbackId) => {
     if (mainButtonState === 'current') return;
     
-    bankName = bankName.toLowerCase()
-
     const bankData = BANK_CASHBACKS[bankName];
     if (!bankData) return;
     
@@ -573,7 +571,8 @@ export default function App() {
           apiResults.forEach(item => {
             if (!groupedResults[item.bank_name]) {
               groupedResults[item.bank_name] = {
-                maxSelections: 5, // Default value, could be determined differently
+                maxSelections: apiResults.filter(resultItem => resultItem.bank_name === item.bank_name &&
+                  resultItem.choosen === "yes").length,
                 bankInfo: `${item.bank_name} offers competitive cashback rates.`,
                 cashbacks: []
               };
@@ -650,7 +649,7 @@ export default function App() {
 
   // Filtered banks (without sorting by chosen state)
   const filteredBanks = ALL_BANKS.filter(bank => 
-    bank.name.toLowerCase().includes(searchTerm.toLowerCase())
+    bank.name.includes(searchTerm)
   );
 
   // Calculate current income from categories
