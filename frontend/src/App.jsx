@@ -262,6 +262,7 @@ export default function App() {
   const [isUpdatingConsents, setIsUpdatingConsents] = useState(false);
   const [cashbackTransactions, setCashbackTransactions] = useState({});
   const [BANK_CASHBACKS, setBankCashbacks] = useState({});
+  const [cashbackTransactions, setCashbackTransactions] = useState({});
   const dropdownContainerRef = useRef(null);
   const historyDropdownContainerRef = useRef(null);
   const dropdownTimeoutRef = useRef(null);
@@ -774,7 +775,7 @@ export default function App() {
         </button>
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">{selectedBank.name}</h1>
-          <p className="text-yellow-400 text-xl font-semibold">{isAnalyzed ? selectedBank.value : "??$"}</p>
+          <p className="text-yellow-400 text-xl font-semibold">{isAnalyzed ? selectedBank.value : "??₽"}</p>
           {!isEditingDisabled && (
             <div className="flex items-center gap-2 mt-2">
               <Info className="w-4 h-4 text-blue-400" />
@@ -859,8 +860,8 @@ export default function App() {
         </button>
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">{selectedCategory}</h1>
-          <p className="text-yellow-400 text-xl font-semibold">{totalCashback.toFixed(2)}$ earned</p>
-          <p className="text-gray-400 text-sm">Total spent: {totalSpent.toFixed(2)}$</p>
+          <p className="text-yellow-400 text-xl font-semibold">{totalCashback.toFixed(2)}₽ earned</p>
+          <p className="text-gray-400 text-sm">Total spent: {totalSpent.toFixed(2)}₽</p>
         </div>
         <div className="space-y-3 flex-1">
           <h2 className="text-xl font-semibold text-white mb-4">Transactions</h2>
@@ -884,12 +885,12 @@ export default function App() {
                       Date: {transaction.date}
                     </p>
                     <p className="text-gray-400 text-sm mt-1">
-                      Bank: {transaction.bank}
+                      Bank: {transaction.paymentBank}
                     </p>
                   </div>
                   <div className="text-right">
                     <div className={`text-lg font-bold ${transaction.optimal ? 'text-green-400' : 'text-yellow-400'}`}>
-                      {transaction.cashback.toFixed(2)}$
+                      {transaction.cashback.toFixed(2)}₽
                     </div>
                     {!transaction.optimal && (
                       <div className="text-right">
@@ -1041,7 +1042,7 @@ export default function App() {
               onClick={handleConfirmClick}
               className="bg-gray-500 text-white font-bold py-6 px-6 rounded-3xl shadow-lg text-xl flex items-center justify-center w-full max-w-md mx-auto cursor-pointer"
             >
-              Pls, approve consents ⏳ 🔍
+              Pls, approve consents ✍🏻
             </button>
           )}
           {mainButtonState === 'analyze' && (
