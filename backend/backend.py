@@ -6,12 +6,22 @@ import random
 import logging
 import json
 from process_user import *
+from fastapi.middleware.cors import CORSMiddleware
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace "*" with your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],  # This allows all methods including OPTIONS
+    allow_headers=["*"],
+)
 
 # --- Модели данных Pydantic ---
 
