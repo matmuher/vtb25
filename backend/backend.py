@@ -46,6 +46,8 @@ class TransactionInfo(BaseModel):
     cashback: float
     optimal: bool
     hint: str
+    paymentBank: str
+    date: str
 
 # --- Глобальное хранилище (заменить на БД в проде) ---
 
@@ -258,6 +260,21 @@ async def confirm_cashbacks(request: ConfirmationRequest):
             logger.warning(f"Could not parse amount '{amount_str}' for transaction {tx.get('transactionId')}. Skipping.")
             continue
 
+        # --- НОВОЕ: Извлечение даты транзакции ---
+        # Предполагаем, что дата приходит в формате ISO 8601 в поле 'bookingDate' или 'valueDate'
+        # Можно адаптировать под конкретное поле из API банка
+        transaction_date_raw = tx.get("bookingDateTime")
+        if transaction_date_raw:
+            # Проверяем формат даты и при необходимости конвертируем в строку в формате ISO 8601
+            # Если дата уже строка в нужном формате, используем как есть
+            transaction_date = transaction_date_raw
+            if isinstance(transaction_date_raw, datetime):
+                 transaction_date = transaction_date_raw.isoformat()
+        else:
+            # Если дата не найдена, используем текущую дату или пропускаем
+            transaction_date = datetime.now().isoformat() # или continue, чтобы пропустить
+            logger.warning(f"Transaction {tx.get('transactionId')} has no date, using current time.")
+
         # Определяем, был ли кешбэк оптимальным
         is_optimal = False
         advice = ""
@@ -319,7 +336,9 @@ async def confirm_cashbacks(request: ConfirmationRequest):
                 amount=amount,
                 cashback=cashback_received,
                 optimal=is_optimal,
-                hint=advice
+                hint=advice,
+				paymentBank=bank_name_raw,
+				date=transaction_date
             )
         )
 
