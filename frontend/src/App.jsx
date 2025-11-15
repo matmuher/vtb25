@@ -20,9 +20,9 @@ const BANK_CASHBACKS = {
       { id: 5, category: "Entertainment", cashback: "3%", recommended: false, description: "3% cashback on movies, concerts, streaming services, and entertainment venues." }
     ]
   },
-  "UBank": {
+  "SBank": {
     maxSelections: 4,
-    bankInfo: "UBank provides premium rewards with higher cashback rates and exclusive partner offers for frequent spenders.",
+    bankInfo: "SBank provides premium rewards with higher cashback rates and exclusive partner offers for frequent spenders.",
     cashbacks: [
       { id: 1, category: "Travel", cashback: "8%", recommended: true, description: "8% cashback on flights, hotels, car rentals, and travel booking platforms." },
       { id: 2, category: "Dining", cashback: "6%", recommended: true, description: "6% cashback at restaurants, cafes, bars, and food delivery apps." },
@@ -45,76 +45,14 @@ const BANK_CASHBACKS = {
       { id: 7, category: "Travel", cashback: "2%", recommended: false, description: "2% cashback on travel expenses including flights, hotels, and transportation." }
     ]
   },
-  "Chase Bank": {
-    maxSelections: 3,
-    bankInfo: "Chase Bank offers rotating quarterly categories with bonus cashback opportunities and flexible redemption.",
-    cashbacks: [
-      { id: 1, category: "Travel", cashback: "5%", recommended: true, description: "5% cashback on travel bookings through Chase Ultimate Rewards portal." },
-      { id: 2, category: "Gas", cashback: "4%", recommended: true, description: "4% cashback on gas station purchases with no quarterly limits." },
-      { id: 3, category: "Dining", cashback: "3%", recommended: false, description: "3% cashback on restaurant purchases including delivery and takeout." },
-      { id: 4, category: "Online Shopping", cashback: "2%", recommended: false, description: "2% cashback on online purchases with select partner retailers." }
-    ]
-  },
-  "Bank of America": {
-    maxSelections: 4,
-    bankInfo: "Bank of America provides Preferred Rewards members with enhanced cashback rates and exclusive benefits.",
-    cashbacks: [
-      { id: 1, category: "Online Shopping", cashback: "6%", recommended: true, description: "6% cashback on online purchases through Bank of America's shopping portal." },
-      { id: 2, category: "Groceries", cashback: "4%", recommended: true, description: "4% cashback on grocery store purchases with no spending limits." },
-      { id: 3, category: "Entertainment", cashback: "2%", recommended: false, description: "2% cashback on movie theaters, concerts, and entertainment venues." },
-      { id: 4, category: "Dining", cashback: "3%", recommended: false, description: "3% cashback on restaurant dining and food delivery services." },
-      { id: 5, category: "Utilities", cashback: "1%", recommended: false, description: "1% cashback on utility bill payments including electricity and water." }
-    ]
-  },
-  "Citibank": {
-    maxSelections: 3,
-    bankInfo: "Citibank offers customizable cashback categories with the ability to choose your top spending categories.",
-    cashbacks: [
-      { id: 1, category: "Gas", cashback: "5%", recommended: true, description: "5% cashback on gas purchases up to $600 per quarter." },
-      { id: 2, category: "Restaurants", cashback: "4%", recommended: true, description: "4% cashback on dining at restaurants and cafes nationwide." },
-      { id: 3, category: "Travel", cashback: "3%", recommended: false, description: "3% cashback on travel purchases including flights and hotels." },
-      { id: 4, category: "Shopping", cashback: "2%", recommended: false, description: "2% cashback on department store and retail shopping." }
-    ]
-  },
-  "WBank": {
-    maxSelections: 4,
-    bankInfo: "WBank provides premium cashback rates with no annual fee and unlimited redemption options.",
-    cashbacks: [
-      { id: 1, category: "Travel", cashback: "6%", recommended: true, description: "6% cashback on all travel-related purchases including flights and hotels." },
-      { id: 2, category: "Dining", cashback: "5%", recommended: true, description: "5% cashback on restaurant dining, takeout, and food delivery." },
-      { id: 3, category: "Streaming", cashback: "4%", recommended: true, description: "4% cashback on streaming services like Netflix, Spotify, and Hulu." },
-      { id: 4, category: "Groceries", cashback: "3%", recommended: false, description: "3% cashback on grocery purchases at supermarkets and stores." },
-      { id: 5, category: "Gas", cashback: "2%", recommended: false, description: "2% cashback on fuel purchases at gas stations." }
-    ]
-  }
 };
 const ALL_BANKS = [
   { id: 1, name: "ABank", value: "12 $" },
-  { id: 2, name: "Bank of America", value: "8 $" },
-  { id: 3, name: "Chase Bank", value: "15 $" },
-  { id: 4, name: "Citibank", value: "20 $" },
-  { id: 5, name: "DBank", value: "6 $" },
   { id: 6, name: "EBank", value: "18 $" },
-  { id: 7, name: "FBank", value: "9 $" },
-  { id: 8, name: "GBank", value: "22 $" },
-  { id: 9, name: "HBank", value: "14 $" },
-  { id: 10, name: "IBank", value: "11 $" },
-  { id: 11, name: "JBank", value: "16 $" },
   { id: 12, name: "KBank", value: "7 $" },
-  { id: 13, name: "LBank", value: "19 $" },
-  { id: 14, name: "MBank", value: "13 $" },
-  { id: 15, name: "NBank", value: "21 $" },
-  { id: 16, name: "OBank", value: "5 $" },
-  { id: 17, name: "PBank", value: "17 $" },
-  { id: 18, name: "QBank", value: "10 $" },
-  { id: 19, name: "RBank", value: "23 $" },
   { id: 20, name: "SBank", value: "4 $" },
   { id: 21, name: "TBank", value: "10 $" },
-  { id: 22, name: "UBank", value: "45 $" },
   { id: 23, name: "VBank", value: "44 $" },
-  { id: 24, name: "WBank", value: "25 $" },
-  { id: 25, name: "XBank", value: "3 $" },
-  { id: 26, name: "YBank", value: "2 $" },
   { id: 27, name: "ZBank", value: "1 $" }
 ];
 
@@ -122,32 +60,30 @@ const ALL_BANKS = [
 const CASHBACK_TRANSACTIONS = {
   "Groceries": [
     { id: 1, date: "2025-11-01", merchant: "Whole Foods", amount: 85.50, bank: "TBank", cashback: 4.28, optimal: true, optimalBank: "TBank", optimalCashback: 4.28 },
-    { id: 2, date: "2025-11-03", merchant: "Trader Joe's", amount: 42.30, bank: "Bank of America", cashback: 1.69, optimal: false, optimalBank: "TBank", optimalCashback: 2.12 },
     { id: 3, date: "2025-11-05", merchant: "Amazon Fresh", amount: 67.20, bank: "VBank", cashback: 4.03, optimal: true, optimalBank: "VBank", optimalCashback: 4.03 }
   ],
   "Gas": [
-    { id: 4, date: "2025-11-02", merchant: "Shell", amount: 45.80, bank: "Citibank", cashback: 2.29, optimal: true, optimalBank: "Citibank", optimalCashback: 2.29 },
-    { id: 5, date: "2025-11-06", merchant: "Chevron", amount: 38.90, bank: "TBank", cashback: 1.17, optimal: false, optimalBank: "Citibank", optimalCashback: 1.95 }
+    { id: 4, date: "2025-11-02", merchant: "Shell", amount: 45.80, bank: "SBank", cashback: 2.29, optimal: true, optimalBank: "SBank", optimalCashback: 2.29 },
+    { id: 5, date: "2025-11-06", merchant: "Chevron", amount: 38.90, bank: "TBank", cashback: 1.17, optimal: false, optimalBank: "SBank", optimalCashback: 1.95 }
   ],
   "Dining": [
-    { id: 6, date: "2025-11-01", merchant: "Olive Garden", amount: 78.40, bank: "UBank", cashback: 4.70, optimal: true, optimalBank: "UBank", optimalCashback: 4.70 },
-    { id: 7, date: "2025-11-04", merchant: "Chipotle", amount: 24.60, bank: "Chase Bank", cashback: 0.74, optimal: false, optimalBank: "UBank", optimalCashback: 1.48 }
+    { id: 6, date: "2025-11-01", merchant: "Olive Garden", amount: 78.40, bank: "SBank", cashback: 4.70, optimal: true, optimalBank: "SBank", optimalCashback: 4.70 },
+    { id: 7, date: "2025-11-04", merchant: "Chipotle", amount: 24.60, bank: "TBank", cashback: 0.74, optimal: false, optimalBank: "SBank", optimalCashback: 1.48 }
   ],
   "Travel": [
-    { id: 8, date: "2025-10-28", merchant: "Delta Airlines", amount: 342.00, bank: "UBank", cashback: 27.36, optimal: true, optimalBank: "UBank", optimalCashback: 27.36 },
-    { id: 9, date: "2025-11-07", merchant: "Booking.com", amount: 189.50, bank: "WBank", cashback: 11.37, optimal: true, optimalBank: "WBank", optimalCashback: 11.37 }
+    { id: 8, date: "2025-10-28", merchant: "Delta Airlines", amount: 342.00, bank: "SBank", cashback: 27.36, optimal: true, optimalBank: "SBank", optimalCashback: 27.36 },
+    { id: 9, date: "2025-11-07", merchant: "Booking.com", amount: 189.50, bank: "EBank", cashback: 11.37, optimal: true, optimalBank: "EBank", optimalCashback: 11.37 }
   ],
   "Entertainment": [
-    { id: 10, date: "2025-11-03", merchant: "AMC Theaters", amount: 32.80, bank: "UBank", cashback: 1.31, optimal: true, optimalBank: "UBank", optimalCashback: 1.31 },
-    { id: 11, date: "2025-11-05", merchant: "Spotify", amount: 10.99, bank: "VBank", cashback: 0.33, optimal: false, optimalBank: "UBank", optimalCashback: 0.44 }
+    { id: 10, date: "2025-11-03", merchant: "AMC Theaters", amount: 32.80, bank: "SBank", cashback: 1.31, optimal: true, optimalBank: "SBank", optimalCashback: 1.31 },
+    { id: 11, date: "2025-11-05", merchant: "Spotify", amount: 10.99, bank: "VBank", cashback: 0.33, optimal: false, optimalBank: "SBank", optimalCashback: 0.44 }
   ],
   "Streaming": [
-    { id: 12, date: "2025-11-01", merchant: "Netflix", amount: 15.99, bank: "WBank", cashback: 0.64, optimal: true, optimalBank: "WBank", optimalCashback: 0.64 },
-    { id: 13, date: "2025-11-08", merchant: "Disney+", amount: 13.99, bank: "UBank", cashback: 0.70, optimal: true, optimalBank: "UBank", optimalCashback: 0.70 }
+    { id: 12, date: "2025-11-01", merchant: "Netflix", amount: 15.99, bank: "EBank", cashback: 0.64, optimal: true, optimalBank: "EBank", optimalCashback: 0.64 },
+    { id: 13, date: "2025-11-08", merchant: "Disney+", amount: 13.99, bank: "SBank", cashback: 0.70, optimal: true, optimalBank: "SBank", optimalCashback: 0.70 }
   ],
   "Utilities": [
     { id: 14, date: "2025-11-02", merchant: "PG&E", amount: 124.50, bank: "VBank", cashback: 8.72, optimal: true, optimalBank: "VBank", optimalCashback: 8.72 },
-    { id: 15, date: "2025-11-05", merchant: "Comcast", amount: 89.99, bank: "Bank of America", cashback: 0.90, optimal: false, optimalBank: "VBank", optimalCashback: 6.30 }
   ],
   "Pharmacy": [
     { id: 16, date: "2025-11-04", merchant: "CVS", amount: 45.20, bank: "VBank", cashback: 2.26, optimal: true, optimalBank: "VBank", optimalCashback: 2.26 }
@@ -1085,7 +1021,16 @@ export default function App() {
             Close
           </button>
           <button
-            onClick={approveSingleBankConsent}
+            onClick={() => {
+              if (popupBank?.name) {
+                window.open(
+                  `https://${popupBank.name.toLowerCase()}.open.bankingapi.ru/client/consents.html`,
+                  '_blank',
+                  'noopener,noreferrer'
+                );
+                setShowApproveSinglePopup(false); // Сразу закрываем попап
+              }
+            }}
             className="flex-1 bg-gradient-to-r from-[#337357] to-[#4CAF7D] hover:from-[#2B6246] hover:to-[#3D8B63] text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-200"
           >
             <ExternalLink className="w-4 h-4" />
