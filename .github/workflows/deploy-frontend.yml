@@ -1,7 +1,7 @@
 name: Deploy
 on:
   push:
-    branches: [ master, add-back-deploy ]
+    branches: [ master ]
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -17,8 +17,8 @@ jobs:
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.SERVER_IP }} "
           cd ~/vtb25 &&
-          git checkout add-back-deploy &&
-          git pull origin add-back-deploy &&
+          git checkout master &&
+          git pull origin master &&
           
           # Install backend dependencies using the specific venv
           cd backend &&
