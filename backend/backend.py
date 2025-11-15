@@ -44,7 +44,7 @@ class TransactionInfo(BaseModel):
     merchant: str
     amount: float
     cashback: float
-    flag_is_optimal: bool
+    optimal: bool
     hint: str
 
 # --- Глобальное хранилище (заменить на БД в проде) ---
@@ -318,7 +318,7 @@ async def confirm_cashbacks(request: ConfirmationRequest):
                 merchant=merchant_name,
                 amount=amount,
                 cashback=cashback_received,
-                flag_is_optimal=is_optimal,
+                optimal=is_optimal,
                 hint=advice
             )
         )
