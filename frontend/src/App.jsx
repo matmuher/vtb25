@@ -1,15 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, ChevronUp, Search, Check, X, ArrowLeft, Star, Info, AlertTriangle, ExternalLink, AlertCircle, AlertOctagon, Trash2, CreditCard, TrendingUp, Wallet } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, Check, X, ArrowLeft, Star, Info, AlertTriangle, ExternalLink, AlertCircle, AlertOctagon, Trash2, CreditCard, TrendingUp, Wallet, RefreshCw } from "lucide-react";
 
 // Constants
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-
 const CONSENTS = [
   { id: 'read_cashbacks', label: "Read personal cashbacks" },
   { id: 'choose_cashbacks', label: "Choose cashbacks" },
   { id: 'read_transactions', label: "Read transactions history" }
 ];
-
 const BANK_CASHBACKS = {
   "TBank": {
     maxSelections: 3,
@@ -29,7 +27,7 @@ const BANK_CASHBACKS = {
       { id: 1, category: "Travel", cashback: "8%", recommended: true, description: "8% cashback on flights, hotels, car rentals, and travel booking platforms." },
       { id: 2, category: "Dining", cashback: "6%", recommended: true, description: "6% cashback at restaurants, cafes, bars, and food delivery apps." },
       { id: 3, category: "Entertainment", cashback: "4%", recommended: true, description: "4% cashback on movies, concerts, sporting events, and entertainment subscriptions." },
-      { id: 4, category: "Shopping", cashback: "3%", recommended: false, description: "3% cashback on department stores, clothing, and general retail purchases." },
+      { id: 4, category: "Shopping", cashback: "3%", recommended: false, description: "3% cashback on department store and retail purchases." },
       { id: 5, category: "Utilities", cashback: "2%", recommended: false, description: "2% cashback on electricity, water, internet, and phone bills." },
       { id: 6, category: "Streaming", cashback: "5%", recommended: false, description: "5% cashback on Netflix, Spotify, Disney+, and other streaming subscriptions." }
     ]
@@ -90,7 +88,6 @@ const BANK_CASHBACKS = {
     ]
   }
 };
-
 const ALL_BANKS = [
   { id: 1, name: "ABank", value: "12 $" },
   { id: 2, name: "Bank of America", value: "8 $" },
@@ -163,11 +160,7 @@ const CASHBACK_TRANSACTIONS = {
 // Helper Functions
 const getBankState = (bank, bankConsents) => {
   const consentData = bankConsents[bank.id];
-  if (!consentData) return 'no_consent';
-  const allConsentsGiven = consentData.read_cashbacks && 
-                           consentData.choose_cashbacks && 
-                           consentData.read_transactions;
-  if (!allConsentsGiven) return 'no_consent';
+  if (!consentData) return 'not_approved';
   if (!consentData.approved) return 'not_approved';
   return 'approved';
 };
@@ -175,14 +168,12 @@ const getBankState = (bank, bankConsents) => {
 const getBankDisplayInfo = (bank, bankConsents, isAnalyzed) => {
   const state = getBankState(bank, bankConsents);
   switch (state) {
-    case 'no_consent':
-      return { text: "No consent", color: "text-red-400", icon: AlertCircle };
     case 'not_approved':
       return { text: "Consents not approved", color: "text-yellow-400", icon: AlertTriangle };
     case 'approved':
       return { text: isAnalyzed ? bank.value : "??$", color: "text-green-400", icon: null };
     default:
-      return { text: "No consent", color: "text-red-400", icon: AlertCircle };
+      return { text: "Consents not approved", color: "text-yellow-400", icon: AlertTriangle };
   }
 };
 
@@ -197,27 +188,6 @@ const areAllBanksValid = (chosenBanks, bankConsents) => {
 const getCurrentIncome = (totalAmount) => totalAmount * 0.7;
 
 // Components
-const AnimatedAnalysisButton = ({ isAnalyzing, onClick, disabled }) => {
-  if (isAnalyzing) {
-    return (
-      <div className="w-full max-w-md mx-auto">
-        <div className="bg-gradient-to-r from-[#EE4266] to-[#FF6B8B] text-white font-bold py-6 px-6 rounded-3xl shadow-lg text-xl flex items-center justify-center animate-pulse">
-          ANALYSIS IN PROGRESS
-        </div>
-      </div>
-    );
-  }
-  return (
-    <button 
-      onClick={onClick}
-      disabled={disabled}
-      className="bg-gradient-to-r from-[#EE4266] to-[#FF6B8B] hover:from-[#D93A5C] hover:to-[#E55A7B] disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-6 px-6 rounded-3xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 ease-in-out text-xl flex items-center justify-center w-full max-w-md mx-auto disabled:cursor-not-allowed disabled:transform-none"
-    >
-      ANALYZE SPENDS
-    </button>
-  );
-};
-
 const Popup = ({ isOpen, onClose, title, icon: Icon, children, className = "" }) => {
   if (!isOpen) return null;
   return (
@@ -266,11 +236,9 @@ const ConfirmCashbackPopup = ({ isOpen, onClose, onConfirm }) => {
 
 const OptimalCardPopup = ({ isOpen, onClose, selectedCategory, onCategoryChange }) => {
   if (!isOpen) return null;
-  
   // Find the best bank for the selected category
   let bestBank = null;
   let bestCashbackRate = 0;
-  
   Object.entries(BANK_CASHBACKS).forEach(([bankName, bankData]) => {
     const cashbackForCategory = bankData.cashbacks.find(c => c.category === selectedCategory);
     if (cashbackForCategory) {
@@ -281,10 +249,8 @@ const OptimalCardPopup = ({ isOpen, onClose, selectedCategory, onCategoryChange 
       }
     }
   });
-  
   // Get all unique categories
   const allCategories = [...new Set(Object.values(BANK_CASHBACKS).flatMap(bank => bank.cashbacks.map(c => c.category)))];
-  
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl p-6 w-full max-w-md">
@@ -297,10 +263,9 @@ const OptimalCardPopup = ({ isOpen, onClose, selectedCategory, onCategoryChange 
             <X className="w-6 h-6" />
           </button>
         </div>
-        
         <div className="mb-6">
           <div className="text-left mb-2">
-            <div className="text-gray-700 font-medium">Category (Edit if guessed wrong 😉)</div>
+            <div className="text-gray-700 font-medium">Category (Edit if guessed wrong)</div>
           </div>
           <div className="flex items-center justify-center">
             <button
@@ -313,16 +278,14 @@ const OptimalCardPopup = ({ isOpen, onClose, selectedCategory, onCategoryChange 
               </div>
             </button>
           </div>
-          
           <div className="text-left mb-2 mt-4">
             <div className="text-gray-700 font-medium">Best bank</div>
           </div>
           <div className="text-center text-xl text-[#337357] mb-6 flex items-center justify-center gap-2">
-            <span>🪙</span>
+            <span>⭐</span>
             <span>{bestBank}</span>
           </div>
         </div>
-        
         <button
           onClick={onClose}
           className="w-full bg-gradient-to-r from-[#337357] to-[#4CAF7D] hover:from-[#2B6246] hover:to-[#3D8B63] text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 ease-in-out text-lg"
@@ -336,11 +299,9 @@ const OptimalCardPopup = ({ isOpen, onClose, selectedCategory, onCategoryChange 
 
 const CategoryDropdown = ({ isOpen, onClose, categories, onSelect, selectedCategory }) => {
   if (!isOpen) return null;
-  
   // Find the best bank for the selected category
   let bestBank = null;
   let bestCashbackRate = 0;
-  
   Object.entries(BANK_CASHBACKS).forEach(([bankName, bankData]) => {
     const cashbackForCategory = bankData.cashbacks.find(c => c.category === selectedCategory);
     if (cashbackForCategory) {
@@ -351,7 +312,6 @@ const CategoryDropdown = ({ isOpen, onClose, categories, onSelect, selectedCateg
       }
     }
   });
-  
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl p-6 w-full max-w-md">
@@ -364,15 +324,13 @@ const CategoryDropdown = ({ isOpen, onClose, categories, onSelect, selectedCateg
             <X className="w-6 h-6" />
           </button>
         </div>
-        
         <div className="mb-4">
           <div className="text-center text-xl font-bold text-gray-800 mb-2">{selectedCategory}</div>
           <div className="text-center text-lg text-[#337357] mb-4 flex items-center justify-center gap-2">
-            <span>🪙</span>
+            <span>⭐</span>
             <span>Best bank: {bestBank}</span>
           </div>
         </div>
-        
         <div className="max-h-60 overflow-y-auto space-y-2">
           {categories.map((category) => (
             <button
@@ -412,11 +370,15 @@ export default function App() {
   const [showInvalidBanksPopup, setShowInvalidBanksPopup] = useState(false);
   const [showNeedAnalyzePopup, setShowNeedAnalyzePopup] = useState(false);
   const [showConfirmCashbackPopup, setShowConfirmCashbackPopup] = useState(false);
+  const [showApproveAllPopup, setShowApproveAllPopup] = useState(false);
+  const [showApproveSinglePopup, setShowApproveSinglePopup] = useState(false);
   const [popupBank, setPopupBank] = useState(null);
   const [expandedBanks, setExpandedBanks] = useState({});
-  const [mainButtonState, setMainButtonState] = useState('analyze');
+  const [mainButtonState, setMainButtonState] = useState('wait');
   const [isAnalyzed, setIsAnalyzed] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAnalyzingForConfirmation, setIsAnalyzingForConfirmation] = useState(false);
+  const [isUpdatingConsents, setIsUpdatingConsents] = useState(false);
   const dropdownContainerRef = useRef(null);
   const historyDropdownContainerRef = useRef(null);
   const dropdownTimeoutRef = useRef(null);
@@ -456,113 +418,62 @@ export default function App() {
       setBankConsents(prev => ({
         ...prev,
         [bank.id]: {
-          read_cashbacks: false,
-          choose_cashbacks: false,
-          read_transactions: false,
           approved: false
         }
       }));
     }
   };
 
-  // Consent handlers
-  const toggleConsent = (bankId, consentId) => {
-    setBankConsents(prev => ({
-      ...prev,
-      [bankId]: {
-        ...prev[bankId],
-        [consentId]: !prev[bankId][consentId],
-        approved: false
-      }
-    }));
-  };
-
-  const toggleAllConsents = (bankId) => {
-    const currentConsents = bankConsents[bankId] || {};
-    const allChecked = currentConsents.read_cashbacks && 
-                       currentConsents.choose_cashbacks && 
-                       currentConsents.read_transactions;
-    setBankConsents(prev => ({
-      ...prev,
-      [bankId]: {
-        read_cashbacks: !allChecked,
-        choose_cashbacks: !allChecked,
-        read_transactions: !allChecked,
-        approved: false
-      }
-    }));
-  };
-
-  const toggleAllBanksConsents = () => {
-    const allChecked = chosenBanks.every(bank => {
-      const consentData = bankConsents[bank.id] || {};
-      return consentData.read_cashbacks && 
-             consentData.choose_cashbacks && 
-             consentData.read_transactions;
-    });
-    
-    const newConsents = {};
-    chosenBanks.forEach(bank => {
-      newConsents[bank.id] = {
-        read_cashbacks: !allChecked,
-        choose_cashbacks: !allChecked,
-        read_transactions: !allChecked,
-        approved: false
-      };
-    });
-    setBankConsents(newConsents);
-  };
-
-  const toggleBankExpansion = (bankId) => {
-    setExpandedBanks(prev => ({
-      ...prev,
-      [bankId]: !prev[bankId]
-    }));
-  };
-
   // Navigation handlers
   const handleLogin = async (e) => {
     e.preventDefault();
-
-    if (!login || !password) {
-      alert("Please enter both login and password.");
+    if (!login) {
+      alert("Please enter your login.");
       return;
     }
+    setCurrentPage('bank-selection');
+    // if (false) {; // to test frontend
+    //   try{
+    //     const response = await fetch(`${API_BASE_URL}/api/login`, {
+    //       method: 'POST',
+    //       headers: {
+    //         'Content-Type': 'application/json',
+    //       },
+    //       body: JSON.stringify({
+    //         login: login,
+    //         password: password
+    //       }),
+    //     });
+    //     if (response.ok) {
+    //       console.log("Login successful from backend");
+    //       setCurrentPage('bank-selection');
+    //     } else {
+    //       const errorData = await response.json();
+    //       console.error("Login failed:", response.status, errorData.detail || "Invalid credentials or server error");
+    //       alert(errorData.detail || "Login failed. Please check your credentials.");
+    //     }
+    //   } catch (error) {
+    //     console.error("Network error or error parsing response:", error);
+    //     alert("Could not connect to the server. Please try again later.");
+    //   }
+    // }
+  };
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          login: login,
-          password: password
-        }),
-      });
-
-      if (response.ok) {
-        console.log("Login successful from backend");
-        setCurrentPage('bank-selection');
-      } else {
-        const errorData = await response.json();
-        console.error("Login failed:", response.status, errorData.detail || "Invalid credentials or server error");
-        alert(errorData.detail || "Login failed. Please check your credentials.");
-      }
-    } catch (error) {
-      console.error("Network error or error parsing response:", error);
-      alert("Could not connect to the server. Please try again later.");
+  const confirmBanks = () => {
+    setCurrentPage('main');
+    if (areAllBanksValid(chosenBanks, bankConsents)) {
+      setMainButtonState('analyze');
+    } else {
+      setMainButtonState('wait');
     }
   };
 
-  const confirmBanks = () => setCurrentPage('consents');
-  const sendConsents = () => setCurrentPage('main');
   const goBackToMain = () => {
     setCurrentPage('main');
     setSelectedBank(null);
     setSelectedCategory(null);
   };
-
+  
   const goBackToCategories = () => {
     setCurrentPage('main');
     setSelectedCategory(null);
@@ -571,12 +482,9 @@ export default function App() {
   // Main bank selection handler
   const handleMainBankSelect = (bank) => {
     const state = getBankState(bank, bankConsents);
-    if (state === 'no_consent') {
-      setCurrentPage('consents');
-      setExpandedBanks({ [bank.id]: true });
-    } else if (state === 'not_approved') {
+    if (state === 'not_approved') {
       setPopupBank(bank);
-      setShowApprovalPopup(true);
+      setShowApproveSinglePopup(true);
     } else if (state === 'approved') {
       if (!isAnalyzed) {
         setShowNeedAnalyzePopup(true);
@@ -595,32 +503,27 @@ export default function App() {
   };
 
   // Analysis handlers
-  const handleAnalyzeClick = () => {
+  const handleConfirmClick = () => {
     if (!areAllBanksValid(chosenBanks, bankConsents)) {
       setShowInvalidBanksPopup(true);
       return;
     }
-    setIsAnalyzing(true);
+    setMainButtonState('analyze');
+    setIsAnalyzingForConfirmation(true);
     setTimeout(() => {
-      setIsAnalyzing(false);
+      setIsAnalyzingForConfirmation(false);
       setIsAnalyzed(true);
       setMainButtonState('confirm');
-    }, 2000);
+    }, 5000); // 5 seconds
   };
 
-  const handleConfirmClick = () => {
+  const handleConfirmCashback = () => {
     setShowConfirmCashbackPopup(true);
   };
 
   const confirmCashbackSelection = () => {
     setShowConfirmCashbackPopup(false);
     setMainButtonState('current');
-  };
-
-  const handleFixConsents = () => {
-    setShowInvalidBanksPopup(false);
-    setCurrentPage('main');
-    setIsDropdownOpen(true);
   };
 
   const approveInBankApp = () => {
@@ -637,9 +540,17 @@ export default function App() {
     setPopupBank(null);
   };
 
-  const goToConsents = () => {
-    setCurrentPage('consents');
-    setShowConsentPopup(false);
+  const approveSingleBankConsent = () => {
+    if (popupBank) {
+      setBankConsents(prev => ({
+        ...prev,
+        [popupBank.id]: {
+          ...prev[popupBank.id],
+          approved: true
+        }
+      }));
+    }
+    setShowApproveSinglePopup(false);
     setPopupBank(null);
   };
 
@@ -665,6 +576,69 @@ export default function App() {
     }
   };
 
+  // Update consent statuses from backend
+  const updateConsentStatuses = async () => {
+    if (chosenBanks.length === 0) return;
+    
+    setIsUpdatingConsents(true);
+    
+    try {
+      // In a real implementation, this would be the actual API call:
+      const response = await fetch(`${API_BASE_URL}/api/select_banks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_login: login,
+          selected_banks: chosenBanks.map(bank => bank.name.toLowerCase())
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error("Failed to update consent statuses");
+        return;
+      }
+      
+      const data = await response.json();
+      
+      console.log(data)
+
+      const newConsents = { ...bankConsents };
+      data.statuses.forEach(status => {
+        const bank = chosenBanks.find(b => b.name.toLowerCase() === status.bank_name);
+        if (bank) {
+          newConsents[bank.id] = {
+            ...newConsents[bank.id],
+            approved: status.status === "authorized"
+          };
+        }
+      });
+      
+      setBankConsents(newConsents);
+      
+      // Mock implementation for demonstration
+      // await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // // For demonstration, we'll update statuses randomly
+      // const newConsents = { ...bankConsents };
+      // chosenBanks.forEach(bank => {
+      //   // Simulate backend response - some banks might be approved, others not
+      //   const isApproved = Math.random() > 0.3; // 70% chance of approval for demo
+      //   newConsents[bank.id] = {
+      //     ...newConsents[bank.id],
+      //     approved: isApproved
+      //   };
+      // });
+      
+      // setBankConsents(newConsents);
+    } catch (error) {
+      console.error("Failed to update consent statuses:", error);
+    } finally {
+      setIsUpdatingConsents(false);
+    }
+  };
+
   // Dropdown handlers
   const handleMouseEnter = () => {
     if (dropdownTimeoutRef.current) {
@@ -672,11 +646,13 @@ export default function App() {
     }
     setIsDropdownOpen(true);
   };
+  
   const handleMouseLeave = () => {
     dropdownTimeoutRef.current = setTimeout(() => {
       setIsDropdownOpen(false);
     }, 300);
   };
+  
   const handleDropdownButtonClick = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
@@ -687,11 +663,13 @@ export default function App() {
     }
     setIsHistoryDropdownOpen(true);
   };
+  
   const handleHistoryMouseLeave = () => {
     dropdownTimeoutRef.current = setTimeout(() => {
       setIsHistoryDropdownOpen(false);
     }, 300);
   };
+  
   const handleHistoryDropdownButtonClick = () => {
     setIsHistoryDropdownOpen(!isHistoryDropdownOpen);
   };
@@ -705,6 +683,19 @@ export default function App() {
     setSelectedCategory(category);
     setShowCategoryDropdown(false);
   };
+
+  // Check if all banks are approved and transition to analyze state
+  useEffect(() => {
+    if (mainButtonState === 'wait' && areAllBanksValid(chosenBanks, bankConsents)) {
+      setMainButtonState('analyze');
+      setIsAnalyzingForConfirmation(true);
+      setTimeout(() => {
+        setIsAnalyzingForConfirmation(false);
+        setIsAnalyzed(true);
+        setMainButtonState('confirm');
+      }, 5000); // 5 seconds
+    }
+  }, [chosenBanks, bankConsents, mainButtonState]);
 
   // Cleanup
   useEffect(() => {
@@ -739,7 +730,6 @@ export default function App() {
       const totalSpent = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
       const optimalCount = transactions.filter(t => t.optimal).length;
       const totalCount = transactions.length;
-      
       categories[category] = {
         totalCashback,
         totalSpent,
@@ -772,17 +762,6 @@ export default function App() {
                 required
               />
             </div>
-            <div>
-              <label className="block text-gray-300 text-sm font-medium mb-2">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/20 border border-white/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#337357] focus:border-transparent"
-                placeholder="Enter your password"
-                required
-              />
-            </div>
             <button
               type="submit"
               className="w-full bg-gradient-to-r from-[#337357] to-[#4CAF7D] hover:from-[#2B6246] hover:to-[#3D8B63] text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 ease-in-out text-lg"
@@ -794,7 +773,7 @@ export default function App() {
       </div>
     );
   }
-
+  
   if (currentPage === 'bank-selection') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] flex flex-col p-4">
@@ -812,7 +791,7 @@ export default function App() {
             />
           </div>
         </div>
-
+        
         {/* Scrollable Bank List */}
         <div className="flex-1 overflow-y-auto space-y-2 mb-24 mt-32">
           {filteredBanks.map((bank) => {
@@ -838,7 +817,7 @@ export default function App() {
             );
           })}
         </div>
-
+        
         {/* Fixed Footer Button */}
         <div className="fixed bottom-4 left-4 right-4">
           <button
@@ -853,98 +832,12 @@ export default function App() {
     );
   }
 
-  if (currentPage === 'consents') {
-    const allBanksChecked = chosenBanks.every(bank => {
-      const consentData = bankConsents[bank.id] || {};
-      return consentData.read_cashbacks && 
-             consentData.choose_cashbacks && 
-             consentData.read_transactions;
-    });
-    
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] flex flex-col p-4">
-        {/* Fixed Header */}
-        <div className="fixed top-0 left-0 right-0 z-10 bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] p-4 border-b border-white/20">
-          <h1 className="text-2xl font-bold text-white text-center">Bank Consents</h1>
-        </div>
-
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto space-y-4 mb-24 mt-20">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <span className="text-white text-xl">🔒</span>
-                <span className="text-white font-medium text-lg">Apply consent for all banks</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={toggleAllBanksConsents}
-                  className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
-                    allBanksChecked 
-                      ? 'border-[#337357] bg-[#337357]' 
-                      : 'border-gray-400'
-                  }`}
-                >
-                  {allBanksChecked && <Check className="w-3 h-3 text-white" />}
-                </button>
-              </div>
-            </div>
-            
-            {/* Individual bank consents as sub-elements */}
-            <div className="mt-4 space-y-3">
-              {chosenBanks.map((bank) => {
-                const bankConsentData = bankConsents[bank.id] || {};
-                const allConsentsChecked = bankConsentData.read_cashbacks && 
-                                         bankConsentData.choose_cashbacks && 
-                                         bankConsentData.read_transactions;
-                return (
-                  <div key={bank.id} className="bg-white/5 rounded-lg p-3">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <span className="text-white text-xl">🏦</span>
-                        <span className="text-white font-medium">{bank.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => toggleAllConsents(bank.id)}
-                          className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
-                            allConsentsChecked 
-                              ? 'border-[#337357] bg-[#337357]' 
-                              : 'border-gray-400'
-                          }`}
-                        >
-                          {allConsentsChecked && <Check className="w-3 h-3 text-white" />}
-                        </button>
-                        <span className="text-gray-300 text-sm">Apply consent for this bank</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Fixed Footer Button */}
-        <div className="fixed bottom-4 left-4 right-4">
-          <button
-            onClick={sendConsents}
-            className="w-full bg-gradient-to-r from-[#337357] to-[#4CAF7D] hover:from-[#2B6246] hover:to-[#3D8B63] text-white font-bold py-4 px-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 ease-in-out text-lg"
-          >
-            Send Consents
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   if (currentPage === 'bank-details') {
     const bankData = BANK_CASHBACKS[selectedBank.name];
     const currentSelected = selectedCashbacks[selectedBank.name] || [];
     const maxSelections = bankData?.maxSelections || 0;
     const remainingSelections = Math.max(0, maxSelections - currentSelected.length);
     const isEditingDisabled = mainButtonState === 'current';
-
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] flex flex-col p-6">
         <button 
@@ -954,7 +847,6 @@ export default function App() {
           <ArrowLeft className="w-5 h-5" />
           Back to Banks
         </button>
-        
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">{selectedBank.name}</h1>
           <p className="text-yellow-400 text-xl font-semibold">{isAnalyzed ? selectedBank.value : "??$"}</p>
@@ -978,7 +870,6 @@ export default function App() {
             <p className="text-gray-400 text-sm mt-3">{bankData.bankInfo}</p>
           )}
         </div>
-        
         <div className="space-y-3 flex-1">
           <h2 className="text-xl font-semibold text-white mb-4">Cashback Offers</h2>
           {bankData?.cashbacks.map((cashback) => {
@@ -1031,7 +922,6 @@ export default function App() {
     const transactions = CASHBACK_TRANSACTIONS[selectedCategory] || [];
     const totalCashback = transactions.reduce((sum, t) => sum + t.cashback, 0);
     const totalSpent = transactions.reduce((sum, t) => sum + t.amount, 0);
-
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] flex flex-col p-6">
         <button 
@@ -1041,13 +931,11 @@ export default function App() {
           <ArrowLeft className="w-5 h-5" />
           Back to Categories
         </button>
-        
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">{selectedCategory}</h1>
           <p className="text-yellow-400 text-xl font-semibold">{totalCashback.toFixed(2)}$ earned</p>
           <p className="text-gray-400 text-sm">Total spent: {totalSpent.toFixed(2)}$</p>
         </div>
-        
         <div className="space-y-3 flex-1">
           <h2 className="text-xl font-semibold text-white mb-4">Transactions</h2>
           {transactions.length > 0 ? (
@@ -1107,7 +995,6 @@ export default function App() {
         selectedCategory={selectedCategory || "Groceries"}
         onCategoryChange={handleCategoryDropdownOpen}
       />
-      
       <CategoryDropdown
         isOpen={showCategoryDropdown}
         onClose={() => setShowCategoryDropdown(false)}
@@ -1115,15 +1002,14 @@ export default function App() {
         onSelect={handleCategorySelectFromDropdown}
         selectedCategory={selectedCategory || "Groceries"}
       />
-      
       <Popup
         isOpen={showNeedAnalyzePopup}
         onClose={() => setShowNeedAnalyzePopup(false)}
-        title="Analysis Required"
-        icon={AlertCircle}
+        title="Consents Not Approved"
+        icon={AlertTriangle}
       >
         <p className="text-gray-600 mb-6">
-          You need to analyze your spends first before viewing cashback details.
+          You need to approve consents for all banks before viewing cashback details.
         </p>
         <div className="flex gap-3">
           <button
@@ -1134,15 +1020,26 @@ export default function App() {
           </button>
         </div>
       </Popup>
-
       <Popup
         isOpen={showInvalidBanksPopup}
         onClose={() => setShowInvalidBanksPopup(false)}
-        title="Invalid Bank Configuration"
-        icon={AlertCircle}
+        title="Consents Not Approved"
+        icon={AlertTriangle}
       >
+        <p className="text-gray-600 mb-4">
+          The following banks do not have approved consents:
+        </p>
+        <div className="max-h-40 overflow-y-auto mb-4">
+          {chosenBanks
+            .filter(bank => getBankState(bank, bankConsents) !== 'approved')
+            .map(bank => (
+              <div key={bank.id} className="p-2 bg-gray-100 rounded mb-1">
+                <span className="font-medium">{bank.name}</span> - Consents not approved
+              </div>
+            ))}
+        </div>
         <p className="text-gray-600 mb-6">
-          Some banks are not properly configured. Please fix consents for all banks or remove invalid banks before proceeding.
+          Please approve consents in bank apps or remove banks to start analysis.
         </p>
         <div className="flex gap-3">
           <button
@@ -1151,60 +1048,87 @@ export default function App() {
           >
             Close
           </button>
-          <button
-            onClick={handleFixConsents}
-            className="flex-1 bg-gradient-to-r from-[#EE4266] to-[#FF6B8B] hover:from-[#D93A5C] hover:to-[#E55A7B] text-white font-medium py-3 px-4 rounded-xl transition-all duration-200"
-          >
-            Fix Consents
-          </button>
         </div>
       </Popup>
-
       <Popup
-        isOpen={showApprovalPopup}
-        onClose={() => setShowApprovalPopup(false)}
-        title="Approve Consents"
+        isOpen={showApproveAllPopup}
+        onClose={() => setShowApproveAllPopup(false)}
+        title="Approve All Consents"
         icon={AlertTriangle}
       >
         <p className="text-gray-600 mb-6">
-          Please approve the consents in your bank's app to access cashback features.
+          Approve all consents or delete unwanted banks before proceeding.
         </p>
         <div className="flex gap-3">
           <button
-            onClick={() => setShowApprovalPopup(false)}
+            onClick={() => setShowApproveAllPopup(false)}
+            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-4 rounded-xl transition-colors duration-200"
+          >
+            Close
+          </button>
+        </div>
+      </Popup>
+      <Popup
+        isOpen={showApproveSinglePopup}
+        onClose={() => setShowApproveSinglePopup(false)}
+        title="Approve Consent"
+        icon={AlertTriangle}
+      >
+        <p className="text-gray-600 mb-4">
+          Please approve the consent for <span className="font-bold">{popupBank?.name}</span> to access cashback features.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowApproveSinglePopup(false)}
             className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-4 rounded-xl transition-colors duration-200"
           >
             Close
           </button>
           <button
-            onClick={approveInBankApp}
+            onClick={approveSingleBankConsent}
             className="flex-1 bg-gradient-to-r from-[#337357] to-[#4CAF7D] hover:from-[#2B6246] hover:to-[#3D8B63] text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-200"
           >
             <ExternalLink className="w-4 h-4" />
-            Approve in Bank App
+            Approve Consent
           </button>
         </div>
       </Popup>
-
       <ConfirmCashbackPopup
         isOpen={showConfirmCashbackPopup}
         onClose={() => setShowConfirmCashbackPopup(false)}
         onConfirm={confirmCashbackSelection}
       />
-
       <div className="min-h-screen bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] flex flex-col items-center p-4 overflow-hidden">
         {/* Main Button at 1/4 from top */}
         <div className="mt-16 md:mt-24 w-full flex justify-center">
+          {mainButtonState === 'wait' && (
+            <button 
+              onClick={handleConfirmClick}
+              className="bg-gray-500 text-white font-bold py-6 px-6 rounded-3xl shadow-lg text-xl flex items-center justify-center w-full max-w-md mx-auto cursor-pointer"
+            >
+              Pls, approve consents ✍🏻
+            </button>
+          )}
           {mainButtonState === 'analyze' && (
-            <AnimatedAnalysisButton 
-              isAnalyzing={isAnalyzing}
-              onClick={handleAnalyzeClick}
-              disabled={chosenBanks.length === 0}
-            />
+            <button 
+              onClick={handleConfirmClick}
+              disabled={isAnalyzingForConfirmation}
+              className={`${
+                isAnalyzingForConfirmation 
+                  ? 'bg-purple-700 animate-pulse' 
+                  : 'bg-gradient-to-r from-[#EE4266] to-[#FF6B8B] hover:from-[#D93A5C] hover:to-[#E55A7B]'
+              } text-white font-bold py-6 px-6 rounded-3xl shadow-lg ${
+                isAnalyzingForConfirmation ? '' : 'hover:shadow-xl transform hover:scale-105'
+              } transition-all duration-200 ease-in-out text-xl flex items-center justify-center w-full max-w-md mx-auto ${
+                isAnalyzingForConfirmation ? '' : 'disabled:cursor-not-allowed disabled:transform-none'
+              }`}
+            >
+              {isAnalyzingForConfirmation ? 'We gently analyze your cashbacks...' : 'CONFIRM CASHBACKS'}
+            </button>
           )}
           {mainButtonState === 'confirm' && (
             <button 
-              onClick={handleConfirmClick}
+              onClick={handleConfirmCashback}
               className="bg-[#FFD23F] hover:bg-[#E6BD37] text-gray-900 font-bold py-6 px-6 rounded-3xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 ease-in-out text-xl flex items-center justify-center w-full max-w-md mx-auto"
             >
               CONFIRM CASHBACKS
@@ -1219,7 +1143,7 @@ export default function App() {
             </button>
           )}
         </div>
-
+        
         {/* Fixed elements at 2/4 from top - MOVED HIGHER */}
         <div className="mt-24 md:mt-32 w-full max-w-md space-y-6">
           {mainButtonState === 'current' ? (
@@ -1270,7 +1194,6 @@ export default function App() {
                   </div>
                 )}
               </div>
-
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 shadow-md border border-white/20">
                 <div className="flex justify-between items-center">
                   <p className="text-gray-300 text-lg">Current income</p>
@@ -1281,12 +1204,25 @@ export default function App() {
           ) : (
             <>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 shadow-md border border-white/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-white text-xl">🏦</span>
-                  <span className="text-white font-medium">Cashback per bank</span>
-                  {hasIncompleteConsents(chosenBanks, bankConsents) && (
-                    <AlertOctagon className="w-4 h-4 text-yellow-400" />
-                  )}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white text-xl">🏦</span>
+                    <span className="text-white font-medium">Cashback per bank</span>
+                    {hasIncompleteConsents(chosenBanks, bankConsents) && (
+                      <AlertOctagon className="w-4 h-4 text-yellow-400" />
+                    )}
+                  </div>
+                  <button
+                    onClick={updateConsentStatuses}
+                    disabled={isUpdatingConsents}
+                    className="text-white hover:text-gray-300 disabled:opacity-50"
+                  >
+                    {isUpdatingConsents ? (
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-5 h-5" />
+                    )}
+                  </button>
                 </div>
                 <div className="max-h-60 overflow-y-auto space-y-2">
                   {chosenBanks.length > 0 ? (
@@ -1325,7 +1261,6 @@ export default function App() {
                   )}
                 </div>
               </div>
-
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 shadow-md border border-white/20">
                 <div className="flex justify-between items-center">
                   <p className="text-gray-300 text-lg">Predicted income</p>
