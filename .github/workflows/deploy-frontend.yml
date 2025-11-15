@@ -31,7 +31,6 @@ jobs:
           npm run build &&
           cd .. &&
           
-          # Restart services using PM2
-          pm2 reload vtb25-frontend || pm2 start ecosystem.config.cjs --name vtb25-frontend &&
-          pm2 reload vtb25-backend || pm2 start backend/ecosystem.config.cjs --name vtb25-backend
+          # Restart all services using single ecosystem file
+          pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
         "
