@@ -1,7 +1,7 @@
 name: Deploy
 on:
   push:
-    branches: [ master, add-back-deploy ]
+    branches: [ master ]
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -20,14 +20,15 @@ jobs:
           git checkout master &&
           git pull origin master &&
           
-          # Install backend dependencies
+          # Install backend dependencies using the specific venv
           cd backend &&
-          pip install -r requirements.txt &&
+          ~/vtb25/backend/venv/bin/pip install -r requirements.txt &&
           cd .. &&
           
-          # Build frontend
+          # Build frontend and install serve
           cd frontend &&
           npm install &&
+          npm install -g serve &&
           npm run build &&
           cd .. &&
           
