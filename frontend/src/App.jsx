@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, ChevronUp, Search, Check, X, ArrowLeft, Star, Info, AlertTriangle, ExternalLink, AlertCircle, AlertOctagon, Trash2, CreditCard, TrendingUp, Wallet, RefreshCw } from "lucide-react";
 import transactionsMock from './mock/transactions_new.json';
-
 // Constants
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 const CONSENTS = [
@@ -9,7 +8,6 @@ const CONSENTS = [
   { id: 'choose_cashbacks', label: "Choose cashbacks" },
   { id: 'read_transactions', label: "Read transactions history" }
 ];
-
 const ALL_BANKS = [
   { id: 1, name: "Abank", value: "12 ₽" },
   { id: 6, name: "Ebank", value: "18 ₽" },
@@ -19,7 +17,6 @@ const ALL_BANKS = [
   { id: 23, name: "Vbank", value: "44 ₽" },
   { id: 27, name: "Zbank", value: "1 ₽" }
 ];
-
 // Helper Functions
 const getBankState = (bank, bankConsents) => {
   const consentData = bankConsents[bank.id];
@@ -27,7 +24,6 @@ const getBankState = (bank, bankConsents) => {
   if (!consentData.approved) return 'not_approved';
   return 'approved';
 };
-
 const getBankDisplayInfo = (bank, bankConsents, isAnalyzed) => {
   const state = getBankState(bank, bankConsents);
   switch (state) {
@@ -39,15 +35,12 @@ const getBankDisplayInfo = (bank, bankConsents, isAnalyzed) => {
       return { text: "Consents not approved", color: "text-yellow-400", icon: AlertTriangle };
   }
 };
-
 const hasIncompleteConsents = (chosenBanks, bankConsents) => {
   return chosenBanks.some(bank => getBankState(bank, bankConsents) !== 'approved');
 };
-
 const areAllBanksValid = (chosenBanks, bankConsents) => {
   return chosenBanks.length > 0 && chosenBanks.every(bank => getBankState(bank, bankConsents) === 'approved');
 };
-
 const getCurrentIncome = (totalAmount) => totalAmount * 0.7;
 
 // Components
@@ -97,32 +90,30 @@ const ConfirmCashbackPopup = ({ isOpen, onClose, onConfirm }) => {
   );
 };
 
-const OptimalCardPopup = ({ isOpen, onClose, selectedCategory, onCategoryChange }) => {
+const OptimalCardPopup = ({ isOpen, onClose, selectedCategory, onCategoryChange, bankCashbacks }) => {
   if (!isOpen) return null;
   
   // Find the best bank for the selected category
   let bestBank = null;
   let bestCashbackRate = 0;
   
-  // We'll need to access the dynamic bank cashbacks here
-  // This will be populated after API call
-  const allCashbackData = Object.values(BANK_CASHBACKS || {});
-  allCashbackData.forEach(bankCashbacks => {
-    const cashbackForCategory = bankCashbacks.cashbacks.find(c => c.category === selectedCategory);
+  // Iterate through all bank cashbacks to find the best rate for the selected category
+  Object.values(bankCashbacks || {}).forEach(bankData => {
+    const cashbackForCategory = bankData.cashbacks?.find(c => c.category === selectedCategory);
     if (cashbackForCategory) {
       const cashbackRate = typeof cashbackForCategory.cashback === 'string' 
         ? parseFloat(cashbackForCategory.cashback) 
         : cashbackForCategory.percent || 0;
       if (cashbackRate > bestCashbackRate) {
         bestCashbackRate = cashbackRate;
-        bestBank = cashbackForCategory.bank_name || 'Unknown';
+        bestBank = cashbackForCategory.bank_name || bankData.bankInfo?.split(' ')[0] || 'Unknown';
       }
     }
   });
-
+  
   // Get all unique categories
-  const allCategories = [...new Set(Object.values(BANK_CASHBACKS || {}).flatMap(bank => 
-    bank.cashbacks.map(c => c.category)
+  const allCategories = [...new Set(Object.values(bankCashbacks || {}).flatMap(bank => 
+    bank.cashbacks?.map(c => c.category) || []
   ))];
 
   return (
@@ -171,24 +162,23 @@ const OptimalCardPopup = ({ isOpen, onClose, selectedCategory, onCategoryChange 
   );
 };
 
-const CategoryDropdown = ({ isOpen, onClose, categories, onSelect, selectedCategory }) => {
+const CategoryDropdown = ({ isOpen, onClose, categories, onSelect, selectedCategory, bankCashbacks }) => {
   if (!isOpen) return null;
   
   // Find the best bank for the selected category
   let bestBank = null;
   let bestCashbackRate = 0;
   
-  // We'll need to access the dynamic bank cashbacks here
-  const allCashbackData = Object.values(BANK_CASHBACKS || {});
-  allCashbackData.forEach(bankCashbacks => {
-    const cashbackForCategory = bankCashbacks.cashbacks.find(c => c.category === selectedCategory);
+  // Iterate through all bank cashbacks to find the best rate for the selected category
+  Object.values(bankCashbacks || {}).forEach(bankData => {
+    const cashbackForCategory = bankData.cashbacks?.find(c => c.category === selectedCategory);
     if (cashbackForCategory) {
       const cashbackRate = typeof cashbackForCategory.cashback === 'string' 
         ? parseFloat(cashbackForCategory.cashback) 
         : cashbackForCategory.percent || 0;
       if (cashbackRate > bestCashbackRate) {
         bestCashbackRate = cashbackRate;
-        bestBank = cashbackForCategory.bank_name || 'Unknown';
+        bestBank = cashbackForCategory.bank_name || bankData.bankInfo?.split(' ')[0] || 'Unknown';
       }
     }
   });
@@ -356,7 +346,6 @@ export default function App() {
       setShowInvalidBanksPopup(true);
       return;
     }
-    
     setMainButtonState('analyze');
     setIsAnalyzingForConfirmation(true);
   };
@@ -365,9 +354,44 @@ export default function App() {
     setShowConfirmCashbackPopup(true);
   };
 
-  const confirmCashbackSelection = () => {
+  const confirmCashbackSelection = async () => {
     setShowConfirmCashbackPopup(false);
     setMainButtonState('current');
+    // Prepare the analysis results to send to the backend
+    const resultsToSend = [];
+    Object.entries(BANK_CASHBACKS).forEach(([bankName, bankData]) => {
+      bankData.cashbacks.forEach(cashback => {
+        const isSelected = selectedCashbacks[bankName]?.includes(cashback.id);
+        resultsToSend.push({
+          bank_name: cashback.bank_name || bankName,
+          category: cashback.category,
+          percent: cashback.percent,
+          choosen: isSelected ? "yes" : "no",
+          total_cb: cashback.total_cb || 0
+        });
+      });
+    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/confirm_cashbacks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_login: login,
+          results: JSON.stringify(resultsToSend)
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setCashbackTransactions(data)
+      console.log("Confirmation response:", data);
+    } catch (error) {
+      console.error("Failed to confirm cashbacks:", error);
+      alert("Failed to confirm cashbacks. Please try again.");
+    }
   };
 
   const approveInBankApp = () => {
@@ -401,14 +425,11 @@ export default function App() {
   // Cashback handlers
   const handleCashbackToggle = (bankName, cashbackId) => {
     if (mainButtonState === 'current') return;
-    
     const bankData = BANK_CASHBACKS[bankName];
     if (!bankData) return;
-    
     const currentSelected = selectedCashbacks[bankName] || [];
     const isSelected = currentSelected.includes(cashbackId);
     const maxSelections = bankData.maxSelections;
-    
     if (isSelected) {
       setSelectedCashbacks(prev => ({
         ...prev,
@@ -471,30 +492,25 @@ export default function App() {
     }
     setIsDropdownOpen(true);
   };
-
   const handleMouseLeave = () => {
     dropdownTimeoutRef.current = setTimeout(() => {
       setIsDropdownOpen(false);
     }, 300);
   };
-
   const handleDropdownButtonClick = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
-
   const handleHistoryMouseEnter = () => {
     if (dropdownTimeoutRef.current) {
       clearTimeout(dropdownTimeoutRef.current);
     }
     setIsHistoryDropdownOpen(true);
   };
-
   const handleHistoryMouseLeave = () => {
     dropdownTimeoutRef.current = setTimeout(() => {
       setIsHistoryDropdownOpen(false);
     }, 300);
   };
-
   const handleHistoryDropdownButtonClick = () => {
     setIsHistoryDropdownOpen(!isHistoryDropdownOpen);
   };
@@ -503,7 +519,6 @@ export default function App() {
   const handleCategoryDropdownOpen = () => {
     setShowCategoryDropdown(true);
   };
-
   const handleCategorySelectFromDropdown = (category) => {
     setSelectedCategory(category);
     setShowCategoryDropdown(false);
@@ -514,23 +529,18 @@ export default function App() {
     if (mainButtonState === 'wait' && areAllBanksValid(chosenBanks, bankConsents)) {
       setMainButtonState('analyze');
       setIsAnalyzingForConfirmation(true);
-      
       // Simulate API call to get analysis results
       setTimeout(async () => {
         try {
           // Make API call to get analysis results
           const response = await fetch(`${API_BASE_URL}/api/analysis_results/${login}`);
           const data = await response.json();
-          
           console.log('Transition')
           console.log(data)
-
           // Parse the results from the API response
           const apiResults = JSON.parse(data.results);
-          
           console.log('Parsed:')
           console.log(apiResults)
-
           // Group results by bank
           const groupedResults = {};
           apiResults.forEach(item => {
@@ -542,7 +552,6 @@ export default function App() {
                 cashbacks: []
               };
             }
-            
             groupedResults[item.bank_name].cashbacks.push({
               id: `${item.bank_name}-${item.category}`.replace(/\s+/g, '-'),
               category: item.category,
@@ -551,15 +560,13 @@ export default function App() {
               choosen: item.choosen,
               total_cb: item.total_cb,
               recommended: item.choosen === "yes",
-              description: `Get ${item.percent}% cashback on ${item.category} with ${item.bank_name}.`
+              description: `Get ${item.percent}% cashback on ${item.category} with ${item.bank_name}.`,
+              bank_name: item.bank_name
             });
           });
-          
           console.log('groupResults:')
           console.log(groupedResults)
-
           setBankCashbacks(groupedResults);
-          
           // Update selected cashbacks based on API results
           const newSelectedCashbacks = {};
           Object.entries(groupedResults).forEach(([bankName, bankData]) => {
@@ -568,12 +575,9 @@ export default function App() {
               .map(c => c.id);
             newSelectedCashbacks[bankName] = chosenCashbacks;
           });
-          
           setSelectedCashbacks(newSelectedCashbacks);
-          
           console.log('New Selected Cashbacks')
           console.log(newSelectedCashbacks)
-
           // Update bank values based on total cashback
           const updatedBanks = chosenBanks.map(bank => {
             const bankData = groupedResults[bank.name];
@@ -585,12 +589,9 @@ export default function App() {
             }
             return bank;
           });
-          
-
           console.log('Update banks')
           console.log(updatedBanks)
           setChosenBanks(updatedBanks);
-          
           setIsAnalyzingForConfirmation(false);
           setIsAnalyzed(true);
           setMainButtonState('confirm');
@@ -605,8 +606,7 @@ export default function App() {
 
   useEffect(() => {
     // Мок: загружаем из файла
-    setCashbackTransactions(transactionsMock);
-
+    // setCashbackTransactions(transactionsMock);
     // Для боевого использования с backend, раскомментируй:
     /*
     fetch(`${API_BASE_URL}/api/transactions`)
@@ -662,11 +662,18 @@ export default function App() {
 
   const currentIncomeValue = calculateCurrentIncome();
   const categoryCashbacks = getCategoryCashbacks();
-  
+
   // Get all unique categories from dynamic cashbacks
   const allCategories = [...new Set(Object.values(BANK_CASHBACKS).flatMap(bank => 
-    bank.cashbacks.map(c => c.category)
+    bank.cashbacks?.map(c => c.category) || []
   ))];
+
+  // Initialize selectedCategory with the first available category if not set
+  useEffect(() => {
+    if (allCategories.length > 0 && !selectedCategory) {
+      setSelectedCategory(allCategories[0]);
+    }
+  }, [allCategories, selectedCategory]);
 
   // Screens
   if (currentPage === 'auth') {
@@ -715,7 +722,7 @@ export default function App() {
             />
           </div>
         </div>
-        
+
         {/* Scrollable Bank List */}
         <div className="flex-1 overflow-y-auto space-y-2 mb-24 mt-32">
           {filteredBanks.map((bank) => {
@@ -741,7 +748,7 @@ export default function App() {
             );
           })}
         </div>
-        
+
         {/* Fixed Footer Button */}
         <div className="fixed bottom-4 left-4 right-4">
           <button
@@ -762,7 +769,6 @@ export default function App() {
     const maxSelections = bankData?.maxSelections || 0;
     const remainingSelections = Math.max(0, maxSelections - currentSelected.length);
     const isEditingDisabled = mainButtonState === 'current';
-    
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] flex flex-col p-6">
         <button 
@@ -847,7 +853,6 @@ export default function App() {
     const transactions = cashbackTransactions?.[selectedCategory] || [];
     const totalCashback = transactions.reduce((sum, t) => sum + t.cashback, 0);
     const totalSpent = transactions.reduce((sum, t) => sum + t.amount, 0);
-    
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] flex flex-col p-6">
         <button 
@@ -920,6 +925,7 @@ export default function App() {
         onClose={() => setShowOptimalCardPopup(false)} 
         selectedCategory={selectedCategory || "Groceries"}
         onCategoryChange={handleCategoryDropdownOpen}
+        bankCashbacks={BANK_CASHBACKS}
       />
       <CategoryDropdown
         isOpen={showCategoryDropdown}
@@ -927,6 +933,7 @@ export default function App() {
         categories={allCategories}
         onSelect={handleCategorySelectFromDropdown}
         selectedCategory={selectedCategory || "Groceries"}
+        bankCashbacks={BANK_CASHBACKS}
       />
       <Popup
         isOpen={showNeedAnalyzePopup}
@@ -1078,7 +1085,7 @@ export default function App() {
             </button>
           )}
         </div>
-        
+
         {/* Fixed elements at 2/4 from top - MOVED HIGHER */}
         <div className="mt-24 md:mt-32 w-full max-w-md space-y-6">
           {mainButtonState === 'current' ? (
