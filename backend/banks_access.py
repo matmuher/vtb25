@@ -272,5 +272,5 @@ def print_bank_tokens():
     except Exception as e:
         print(f"Неизвестная ошибка: {e}")
 
-update_expired_tokens()
-print_bank_tokens()
+#update_expired_tokens()
+#print_bank_tokens()
