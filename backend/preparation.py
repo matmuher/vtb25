@@ -1,6 +1,5 @@
 import sqlite3
 from VTBAPI_Requests import *
-from banks_access import *
 from datetime import datetime, timezone
 from typing import Optional
 import json
