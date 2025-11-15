@@ -138,12 +138,27 @@ def choose_best_cashback(prediction_df, cashback_df):
 
     return pd.DataFrame(results)
 
-def parse_transactions_json_to_dataframe(transactions_json_data):
+
+def filter_out_categories(df, exclude_categories=None):
+    """
+    Удаляет строки с категориями из списка exclude_categories.
+    """
+    if exclude_categories is None:
+        exclude_categories = ['Зарплата', 'Other Payments', 'Платеж По Кредиту', 'Payment', 'Transfer', 'Salary']
+
+    exclude_set = {cat.strip().title() for cat in exclude_categories}
+    return df[~df['category'].isin(exclude_set)].reset_index(drop=True)
+
+
+
+def parse_transactions_json_to_dataframe(transactions_json_data, cashbacks_df):
     """
     Преобразует JSON-данные транзакций в DataFrame.
     Поддерживает два формата:
     - {"data": {"transaction": [...]}}
     - [...]
+    
+    Теперь принимает cashbacks_df для определения известных категорий.
     """
     if isinstance(transactions_json_data, dict):
         raw_data = transactions_json_data.get("data", {}).get("transaction", [])
@@ -154,16 +169,14 @@ def parse_transactions_json_to_dataframe(transactions_json_data):
 
     records = []
 
-    # Список ожидаемых категорий (можно вынести в конфиг)
-    known_categories = {
-        'Hair Cut', 'Hair cut', 'hair cut',
-        'Зарплата',
-        'Транспорт',
-        'Grocery', 'grocery', 'Food', 'cafe', 'restaurant',
-        'Clothing', 'Shoes', 'Personal Items',
-        'Pharmacy', 'Drugstore', 'Personal Care',
-        'Eating/Going Out'
-    }
+    # Извлекаем категории из cashbacks_df
+    # Предполагаем, что колонка с категорией называется 'category'
+    # Приводим к строке и убираем лишние пробелы, приводим к единому регистру (Title Case)
+    # для сопоставления
+    known_categories_for_matching = set(
+        cashbacks_df['category'].astype(str).str.strip().str.title()
+    )
+    # print(f"Извлеченные категории из кешбэков для сопоставления: {known_categories_for_matching}") # Для отладки
 
     for tx in raw_data:
         if tx.get("status") != "completed":
@@ -178,11 +191,11 @@ def parse_transactions_json_to_dataframe(transactions_json_data):
         # 2. Если merchant нет, но transactionInformation совпадает с известной категорией
         elif tx.get("transactionInformation"):
             info = tx["transactionInformation"].strip()
-            # Проверяем точное совпадение (регистронезависимо)
-            if any(info.lower() == cat.lower() for cat in known_categories):
-                category = info  # сохраняем оригинальный регистр
+            # Проверяем точное совпадение (регистронезависимо) с категориями из кешбэков
+            if info.title() in known_categories_for_matching:
+                category = info  # сохраняем оригинальный регистр из транзакции
             else:
-                # Можно попробовать частичные совпадения, но пока просто помечаем как платеж
+                # Если не совпадает, помечаем как платеж
                 category = "other_payments"
         else:
             category = "other_payments"
@@ -211,30 +224,22 @@ def parse_transactions_json_to_dataframe(transactions_json_data):
     df = pd.DataFrame(records) if records else pd.DataFrame(columns=["month", "category", "amount"])
     return df
 
-def filter_out_categories(df, exclude_categories=None):
-    """
-    Удаляет строки с категориями из списка exclude_categories.
-    """
-    if exclude_categories is None:
-        exclude_categories = ['Зарплата', 'Other Payments', 'Платеж По Кредиту', 'Payment', 'Transfer', 'Salary']
-
-    exclude_set = {cat.strip().title() for cat in exclude_categories}
-    return df[~df['category'].isin(exclude_set)].reset_index(drop=True)
-
-
+# Обновлённая версия функции json_transactions_to_best_cashbacks
 def json_transactions_to_best_cashbacks(transactions_json_data, cashbacks_name='Cashbacks.xlsx', month='2025-11-01'):
     """
     Аналог previous_transactions_to_best_cashbacks, но принимает JSON-данные транзакций.
     """
-    transactions = parse_transactions_json_to_dataframe(transactions_json_data)
-    
+    # Загружаем кешбэки
+    cashbacks = pd.read_excel(cashbacks_name)
+    # Приводим категории в кешбэках к title() для внутреннего согласования
+    cashbacks['category'] = cashbacks['category'].astype(str).str.strip().str.title()
+    cashbacks['category_limit'] = cashbacks['category_limit'].fillna(float('inf'))
+
+    # Передаём cashbacks_df в parse_transactions_json_to_dataframe
+    transactions = parse_transactions_json_to_dataframe(transactions_json_data, cashbacks)
+
     # Фильтруем ненужные категории
     exclude_cats = ['Зарплата', 'Other Payments', 'Платеж По Кредиту', 'Payment', 'Transfer', 'Salary']
     transactions = filter_out_categories(transactions, exclude_cats)
-    
-    cashbacks = pd.read_excel(cashbacks_name)
-    # Приводим категории в кешбэках к title() для согласования
-    cashbacks['category'] = cashbacks['category'].astype(str).str.strip().str.title()
-    cashbacks['category_limit'] = cashbacks['category_limit'].fillna(float('inf'))
 
     return choose_best_cashback(prediction_model(transactions, month), cashbacks)
