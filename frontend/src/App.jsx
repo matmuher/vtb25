@@ -260,7 +260,6 @@ export default function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAnalyzingForConfirmation, setIsAnalyzingForConfirmation] = useState(false);
   const [isUpdatingConsents, setIsUpdatingConsents] = useState(false);
-  const [cashbackTransactions, setCashbackTransactions] = useState({});
   const [BANK_CASHBACKS, setBankCashbacks] = useState({});
   const [cashbackTransactions, setCashbackTransactions] = useState({});
   const dropdownContainerRef = useRef(null);
