@@ -3,6 +3,10 @@ import { ChevronDown, ChevronUp, Search, Check, X, ArrowLeft, Star, Info, AlertT
 import transactionsMock from './mock/transactions_new.json';
 // Constants
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+
+console.log('Full import.meta.env:', import.meta.env);
+console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
+
 const CONSENTS = [
   { id: 'read_cashbacks', label: "Read personal cashbacks" },
   { id: 'choose_cashbacks', label: "Choose cashbacks" },
