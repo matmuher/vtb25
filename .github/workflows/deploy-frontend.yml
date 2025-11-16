@@ -28,7 +28,6 @@ jobs:
           # Build frontend and install serve
           cd frontend &&
           npm install &&
-          npm install -g serve &&
           npm run build &&
           cd .. &&
           
