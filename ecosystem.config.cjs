@@ -12,7 +12,7 @@ module.exports = {
     {
       name: 'vtb25-backend',
       script: '/home/matmuher/vtb25/backend/venv/bin/python',
-      args: '-m uvicorn backend:app --host 0.0.0.0 --port 8000',
+      args: '-m uvicorn backend:app --host 158.160.187.198 --port 8000',
       cwd: '/home/matmuher/vtb25/backend',
       instances: 1,
       autorestart: true,
