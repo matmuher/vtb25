@@ -1,15 +1,18 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, ChevronUp, Search, Check, X, ArrowLeft, Star, Info, AlertTriangle, ExternalLink, AlertCircle, AlertOctagon, Trash2, CreditCard, TrendingUp, Wallet, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, Check, X, ArrowLeft, Star, Info, AlertTriangle, ExternalLink, AlertCircle, AlertOctagon, Trash2, CreditCard, TrendingUp, Wallet, RefreshCw, LogOut } from "lucide-react";
 import transactionsMock from './mock/transactions_new.json';
+
 // Constants
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 console.log('Full import.meta.env:', import.meta.env);
 console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
+
 const CONSENTS = [
   { id: 'read_cashbacks', label: "Чтение персональных кэшбэков" },
   { id: 'choose_cashbacks', label: "Выбор кэшбэков" },
   { id: 'read_transactions', label: "Чтение истории транзакций" }
 ];
+
 const ALL_BANKS = [
   { id: 1, name: "Abank", value: "12 ₽" },
   { id: 6, name: "Ebank", value: "18 ₽" },
@@ -19,6 +22,7 @@ const ALL_BANKS = [
   { id: 23, name: "Vbank", value: "44 ₽" },
   { id: 27, name: "Zbank", value: "1 ₽" }
 ];
+
 // Helper Functions
 const getBankState = (bank, bankConsents) => {
   const consentData = bankConsents[bank.id];
@@ -26,6 +30,7 @@ const getBankState = (bank, bankConsents) => {
   if (!consentData.approved) return 'not_approved';
   return 'approved';
 };
+
 const getBankDisplayInfo = (bank, bankConsents, isAnalyzed) => {
   const state = getBankState(bank, bankConsents);
   switch (state) {
@@ -37,13 +42,17 @@ const getBankDisplayInfo = (bank, bankConsents, isAnalyzed) => {
       return { text: "Согласия не одобрены", color: "text-yellow-400", icon: AlertTriangle };
   }
 };
+
 const hasIncompleteConsents = (chosenBanks, bankConsents) => {
   return chosenBanks.some(bank => getBankState(bank, bankConsents) !== 'approved');
 };
+
 const areAllBanksValid = (chosenBanks, bankConsents) => {
   return chosenBanks.length > 0 && chosenBanks.every(bank => getBankState(bank, bankConsents) === 'approved');
 };
+
 const getCurrentIncome = (totalAmount) => totalAmount * 0.7;
+
 // Components
 const Popup = ({ isOpen, onClose, title, icon: Icon, children, className = "" }) => {
   if (!isOpen) return null;
@@ -59,6 +68,7 @@ const Popup = ({ isOpen, onClose, title, icon: Icon, children, className = "" })
     </div>
   );
 };
+
 const ConfirmCashbackPopup = ({ isOpen, onClose, onConfirm }) => {
   if (!isOpen) return null;
   return (
@@ -89,6 +99,7 @@ const ConfirmCashbackPopup = ({ isOpen, onClose, onConfirm }) => {
     </div>
   );
 };
+
 const OptimalCardPopup = ({ isOpen, onClose, selectedCategory, onCategoryChange, bankCashbacks }) => {
   if (!isOpen) return null;
   // Find the best bank for the selected category
@@ -98,8 +109,8 @@ const OptimalCardPopup = ({ isOpen, onClose, selectedCategory, onCategoryChange,
   Object.values(bankCashbacks || {}).forEach(bankData => {
     const cashbackForCategory = bankData.cashbacks?.find(c => c.category === selectedCategory);
     if (cashbackForCategory) {
-      const cashbackRate = typeof cashbackForCategory.cashback === 'string' 
-        ? parseFloat(cashbackForCategory.cashback) 
+      const cashbackRate = typeof cashbackForCategory.cashback === 'string'
+        ? parseFloat(cashbackForCategory.cashback)
         : cashbackForCategory.percent || 0;
       if (cashbackRate > bestCashbackRate) {
         bestCashbackRate = cashbackRate;
@@ -107,16 +118,18 @@ const OptimalCardPopup = ({ isOpen, onClose, selectedCategory, onCategoryChange,
       }
     }
   });
+
   // Get all unique categories
-  const allCategories = [...new Set(Object.values(bankCashbacks || {}).flatMap(bank => 
+  const allCategories = [...new Set(Object.values(bankCashbacks || {}).flatMap(bank =>
     bank.cashbacks?.map(c => c.category) || []
   ))];
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl p-6 w-full max-w-md">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-xl font-bold text-gray-800">Оплата оптимальной картой</h3>
-          <button 
+          <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
           >
@@ -156,6 +169,7 @@ const OptimalCardPopup = ({ isOpen, onClose, selectedCategory, onCategoryChange,
     </div>
   );
 };
+
 const CategoryDropdown = ({ isOpen, onClose, categories, onSelect, selectedCategory, bankCashbacks }) => {
   if (!isOpen) return null;
   // Find the best bank for the selected category
@@ -165,8 +179,8 @@ const CategoryDropdown = ({ isOpen, onClose, categories, onSelect, selectedCateg
   Object.values(bankCashbacks || {}).forEach(bankData => {
     const cashbackForCategory = bankData.cashbacks?.find(c => c.category === selectedCategory);
     if (cashbackForCategory) {
-      const cashbackRate = typeof cashbackForCategory.cashback === 'string' 
-        ? parseFloat(cashbackForCategory.cashback) 
+      const cashbackRate = typeof cashbackForCategory.cashback === 'string'
+        ? parseFloat(cashbackForCategory.cashback)
         : cashbackForCategory.percent || 0;
       if (cashbackRate > bestCashbackRate) {
         bestCashbackRate = cashbackRate;
@@ -174,12 +188,13 @@ const CategoryDropdown = ({ isOpen, onClose, categories, onSelect, selectedCateg
       }
     }
   });
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl p-6 w-full max-w-md">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-xl font-bold text-gray-800">Выбрать категорию</h3>
-          <button 
+          <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
           >
@@ -199,8 +214,8 @@ const CategoryDropdown = ({ isOpen, onClose, categories, onSelect, selectedCateg
               key={category}
               onClick={() => onSelect(category)}
               className={`w-full text-left p-3 rounded-lg transition-colors duration-150 ${
-                category === selectedCategory 
-                  ? 'bg-[#337357] text-white' 
+                category === selectedCategory
+                  ? 'bg-[#337357] text-white'
                   : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
               }`}
             >
@@ -212,20 +227,59 @@ const CategoryDropdown = ({ isOpen, onClose, categories, onSelect, selectedCateg
     </div>
   );
 };
+
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('auth');
-  const [selectedBank, setSelectedBank] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  // Load initial state from localStorage
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    const savedLogin = localStorage.getItem('userLogin');
+    return !!savedLogin; // Check if login exists in storage
+  });
+  const [login, setLogin] = useState(() => {
+    return localStorage.getItem('userLogin') || '';
+  });
+
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (isLoggedIn) {
+      return localStorage.getItem('currentPage') || 'main'; // Default to main if logged in
+    } else {
+      return 'auth'; // Default to auth if not logged in
+    }
+  });
+
+  const [selectedBank, setSelectedBank] = useState(() => {
+    const saved = localStorage.getItem('selectedBank');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    const saved = localStorage.getItem('selectedCategory');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isHistoryDropdownOpen, setIsHistoryDropdownOpen] = useState(false);
   const [showOptimalCardPopup, setShowOptimalCardPopup] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [login, setLogin] = useState('');
-  const [password, setPassword] = useState('');
-  const [chosenBanks, setChosenBanks] = useState([]);
+
+  // const [login, setLogin] = useState(''); // Moved up to load from storage
+  // const [password, setPassword] = useState(''); // Not stored, removed
+
+  const [chosenBanks, setChosenBanks] = useState(() => {
+    const saved = localStorage.getItem('chosenBanks');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCashbacks, setSelectedCashbacks] = useState({});
-  const [bankConsents, setBankConsents] = useState({});
+  const [selectedCashbacks, setSelectedCashbacks] = useState(() => {
+    const saved = localStorage.getItem('selectedCashbacks');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const [bankConsents, setBankConsents] = useState(() => {
+    const saved = localStorage.getItem('bankConsents');
+    return saved ? JSON.parse(saved) : {};
+  });
+
   const [showConsentPopup, setShowConsentPopup] = useState(false);
   const [showApprovalPopup, setShowApprovalPopup] = useState(false);
   const [showInvalidBanksPopup, setShowInvalidBanksPopup] = useState(false);
@@ -234,17 +288,205 @@ export default function App() {
   const [showApproveAllPopup, setShowApproveAllPopup] = useState(false);
   const [showApproveSinglePopup, setShowApproveSinglePopup] = useState(false);
   const [popupBank, setPopupBank] = useState(null);
-  const [expandedBanks, setExpandedBanks] = useState({});
-  const [mainButtonState, setMainButtonState] = useState('wait');
-  const [isAnalyzed, setIsAnalyzed] = useState(false);
+  const [expandedBanks, setExpandedBanks] = useState(() => {
+    const saved = localStorage.getItem('expandedBanks');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const [mainButtonState, setMainButtonState] = useState(() => {
+    if (isLoggedIn && chosenBanks.length > 0 && areAllBanksValid(chosenBanks, bankConsents)) {
+      // Determine state based on analysis status and stored button state
+      const storedState = localStorage.getItem('mainButtonState');
+      if (storedState === 'current' || storedState === 'confirm' || storedState === 'analyze') {
+        return storedState;
+      } else if (localStorage.getItem('isAnalyzed') === 'true') {
+        return 'confirm'; // Assume confirm state if analyzed
+      } else {
+        return 'analyze'; // Assume analyze state if all banks are valid
+      }
+    } else {
+      return 'wait'; // Default state if not logged in or banks are invalid
+    }
+  });
+
+  const [isAnalyzed, setIsAnalyzed] = useState(() => {
+    return localStorage.getItem('isAnalyzed') === 'true';
+  });
+
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isAnalyzingForConfirmation, setIsAnalyzingForConfirmation] = useState(false);
+  const [isAnalyzingForConfirmation, setIsAnalyzingForConfirmation] = useState(() => {
+    return localStorage.getItem('isAnalyzingForConfirmation') === 'true';
+  });
+
+  const [analysisStartTime, setAnalysisStartTime] = useState(() => {
+      const savedTime = localStorage.getItem('analysisStartTime');
+      return savedTime ? parseInt(savedTime, 10) : null;
+  });
+
   const [isUpdatingConsents, setIsUpdatingConsents] = useState(false);
-  const [BANK_CASHBACKS, setBankCashbacks] = useState({});
-  const [cashbackTransactions, setCashbackTransactions] = useState({});
+  const [BANK_CASHBACKS, setBankCashbacks] = useState(() => {
+    const saved = localStorage.getItem('BANK_CASHBACKS');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [cashbackTransactions, setCashbackTransactions] = useState(() => {
+    const saved = localStorage.getItem('cashbackTransactions');
+    return saved ? JSON.parse(saved) : {};
+  });
+
   const dropdownContainerRef = useRef(null);
   const historyDropdownContainerRef = useRef(null);
   const dropdownTimeoutRef = useRef(null);
+
+  // Function to save state to localStorage
+  const saveStateToStorage = () => {
+    if (isLoggedIn) {
+      localStorage.setItem('userLogin', login);
+      localStorage.setItem('currentPage', currentPage);
+      localStorage.setItem('selectedBank', JSON.stringify(selectedBank));
+      localStorage.setItem('selectedCategory', JSON.stringify(selectedCategory));
+      localStorage.setItem('chosenBanks', JSON.stringify(chosenBanks));
+      localStorage.setItem('selectedCashbacks', JSON.stringify(selectedCashbacks));
+      localStorage.setItem('bankConsents', JSON.stringify(bankConsents));
+      localStorage.setItem('expandedBanks', JSON.stringify(expandedBanks));
+      localStorage.setItem('mainButtonState', mainButtonState);
+      localStorage.setItem('isAnalyzed', isAnalyzed.toString());
+      localStorage.setItem('isAnalyzingForConfirmation', isAnalyzingForConfirmation.toString());
+      if (analysisStartTime !== null) {
+          localStorage.setItem('analysisStartTime', analysisStartTime.toString());
+      } else {
+          localStorage.removeItem('analysisStartTime'); // Clear if not analyzing
+      }
+      localStorage.setItem('BANK_CASHBACKS', JSON.stringify(BANK_CASHBACKS));
+      localStorage.setItem('cashbackTransactions', JSON.stringify(cashbackTransactions));
+    }
+  };
+
+  // Function to clear state from localStorage
+  const clearStateFromStorage = () => {
+    localStorage.removeItem('userLogin');
+    localStorage.removeItem('currentPage');
+    localStorage.removeItem('selectedBank');
+    localStorage.removeItem('selectedCategory');
+    localStorage.removeItem('chosenBanks');
+    localStorage.removeItem('selectedCashbacks');
+    localStorage.removeItem('bankConsents');
+    localStorage.removeItem('expandedBanks');
+    localStorage.removeItem('mainButtonState');
+    localStorage.removeItem('isAnalyzed');
+    localStorage.removeItem('isAnalyzingForConfirmation');
+    localStorage.removeItem('analysisStartTime');
+    localStorage.removeItem('BANK_CASHBACKS');
+    localStorage.removeItem('cashbackTransactions');
+  };
+
+  // Save state whenever relevant state variables change
+  useEffect(() => {
+    saveStateToStorage();
+  }, [isLoggedIn, login, currentPage, selectedBank, selectedCategory, chosenBanks, selectedCashbacks, bankConsents, expandedBanks, mainButtonState, isAnalyzed, isAnalyzingForConfirmation, analysisStartTime, BANK_CASHBACKS, cashbackTransactions]);
+
+  // Check if analysis was in progress on initial load and handle accordingly
+  useEffect(() => {
+      const ANALYSIS_DURATION = 5000; // 5 seconds
+      if (isAnalyzingForConfirmation && analysisStartTime !== null) {
+          const elapsedTime = Date.now() - analysisStartTime;
+          const remainingTime = ANALYSIS_DURATION - elapsedTime;
+
+          if (remainingTime <= 0) {
+              // Analysis should have finished, but maybe the state update was missed.
+              // Transition to 'confirm' state as if it finished.
+              console.log("Analysis should have finished, transitioning state.");
+              setIsAnalyzingForConfirmation(false);
+              setIsAnalyzed(true);
+              setMainButtonState('confirm');
+              setAnalysisStartTime(null); // Clear the start time as analysis is done
+          } else {
+              // Still analyzing, set a timeout for the remaining time
+              console.log(`Resuming analysis, ${remainingTime}ms remaining.`);
+              const timer = setTimeout(async () => {
+                  try {
+                      // Make API call to get analysis results (same logic as before)
+                      const response = await fetch(`${API_BASE_URL}/api/analysis_results/${login}`);
+                      const data = await response.json();
+                      console.log('Transition after resume')
+                      console.log(data)
+                      // Parse the results from the API response
+                      const apiResults = JSON.parse(data.results);
+                      console.log('Parsed:')
+                      console.log(apiResults)
+                      // Group results by bank
+                      const groupedResults = {};
+                      apiResults.forEach(item => {
+                          if (!groupedResults[item.bank_name]) {
+                              groupedResults[item.bank_name] = {
+                                  maxSelections: apiResults.filter(resultItem => resultItem.bank_name === item.bank_name &&
+                                      resultItem.choosen === "yes").length,
+                                  bankInfo: `Зарабатывайте вместе с ${item.bank_name}!`,
+                                  cashbacks: []
+                              };
+                          }
+                          groupedResults[item.bank_name].cashbacks.push({
+                              id: `${item.bank_name}-${item.category}`.replace(/\s+/g, '-'),
+                              category: item.category,
+                              cashback: `${item.percent}%`,
+                              percent: item.percent,
+                              choosen: item.choosen,
+                              total_cb: item.total_cb,
+                              recommended: item.choosen === "yes",
+                              description: `Получите ${item.percent}% кэшбэка на ${item.category} с ${item.bank_name}.`,
+                              bank_name: item.bank_name
+                          });
+                      });
+                      console.log('groupResults:')
+                      console.log(groupedResults)
+                      setBankCashbacks(groupedResults);
+                      // Update selected cashbacks based on API results
+                      const newSelectedCashbacks = {};
+                      Object.entries(groupedResults).forEach(([bankName, bankData]) => {
+                          const chosenCashbacks = bankData.cashbacks
+                              .filter(c => c.choosen === "yes")
+                              .map(c => c.id);
+                          newSelectedCashbacks[bankName] = chosenCashbacks;
+                      });
+                      setSelectedCashbacks(newSelectedCashbacks);
+                      console.log('New Selected Cashbacks')
+                      console.log(newSelectedCashbacks)
+                      // Update bank values based on total cashback
+                      const updatedBanks = chosenBanks.map(bank => {
+                          const bankData = groupedResults[bank.name];
+                          if (bankData) {
+                              const totalCashback = bankData.cashbacks
+                                  .filter(c => c.choosen === "yes")
+                                  .reduce((sum, c) => sum + (c.total_cb || 0), 0);
+                              return { ...bank, value: `${totalCashback.toFixed(2)} ₽` };
+                          }
+                          return bank;
+                      });
+                      console.log('Update banks')
+                      console.log(updatedBanks)
+                      setChosenBanks(updatedBanks);
+                      setIsAnalyzingForConfirmation(false);
+                      setIsAnalyzed(true);
+                      setMainButtonState('confirm');
+                      setAnalysisStartTime(null); // Clear the start time as analysis is done
+                  } catch (error) {
+                      console.error("Error fetching analysis results after resume:", error);
+                      setIsAnalyzingForConfirmation(false);
+                      setAnalysisStartTime(null); // Clear the start time on error
+                      alert("Не удалось получить результаты анализа. Пожалуйста, попробуйте снова.");
+                  }
+              }, remainingTime);
+
+              // Cleanup timeout if component unmounts or analysis finishes early
+              return () => clearTimeout(timer);
+          }
+      }
+      // If we are not analyzing, ensure the start time is cleared from state
+      if (!isAnalyzingForConfirmation) {
+          setAnalysisStartTime(null);
+      }
+  }, [isAnalyzingForConfirmation, analysisStartTime, login]); // Run once after initial state load
+
+
   // Bank selection handlers
   const handleBankToggle = (bank) => {
     if (chosenBanks.find(b => b.id === bank.id)) {
@@ -275,6 +517,7 @@ export default function App() {
       }));
     }
   };
+
   // Navigation handlers
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -282,8 +525,32 @@ export default function App() {
       alert("Пожалуйста, введите ваш логин.");
       return;
     }
+    setIsLoggedIn(true); // Set login status
+    // Note: Password is not stored for security
     setCurrentPage('bank-selection');
   };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setLogin('');
+    setCurrentPage('auth');
+    setSelectedBank(null);
+    setSelectedCategory(null);
+    setChosenBanks([]);
+    setSearchTerm('');
+    setSelectedCashbacks({});
+    setBankConsents({});
+    setExpandedBanks({});
+    setMainButtonState('wait');
+    setIsAnalyzed(false);
+    setIsAnalyzing(false);
+    setIsAnalyzingForConfirmation(false);
+    setAnalysisStartTime(null); // Clear analysis start time
+    setBankCashbacks({});
+    setCashbackTransactions({});
+    clearStateFromStorage(); // Clear all stored data
+  };
+
   const confirmBanks = () => {
     setCurrentPage('main');
     if (areAllBanksValid(chosenBanks, bankConsents)) {
@@ -292,15 +559,18 @@ export default function App() {
       setMainButtonState('wait');
     }
   };
+
   const goBackToMain = () => {
     setCurrentPage('main');
     setSelectedBank(null);
     setSelectedCategory(null);
   };
+
   const goBackToCategories = () => {
     setCurrentPage('main');
     setSelectedCategory(null);
   };
+
   // Main bank selection handler
   const handleMainBankSelect = (bank) => {
     const state = getBankState(bank, bankConsents);
@@ -317,11 +587,13 @@ export default function App() {
       setIsDropdownOpen(false);
     }
   };
+
   // Category selection handler
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
     setCurrentPage('category-transactions');
   };
+
   // Analysis handlers
   const handleConfirmClick = async () => {
     if (!areAllBanksValid(chosenBanks, bankConsents)) {
@@ -330,10 +602,13 @@ export default function App() {
     }
     setMainButtonState('analyze');
     setIsAnalyzingForConfirmation(true);
+    setAnalysisStartTime(Date.now()); // Record the start time
   };
+
   const handleConfirmCashback = () => {
     setShowConfirmCashbackPopup(true);
   };
+
   const confirmCashbackSelection = async () => {
     setShowConfirmCashbackPopup(false);
     setMainButtonState('current');
@@ -373,6 +648,7 @@ export default function App() {
       alert("Не удалось подтвердить кэшбэки. Пожалуйста, попробуйте снова.");
     }
   };
+
   const approveInBankApp = () => {
     if (popupBank) {
       setBankConsents(prev => ({
@@ -386,6 +662,7 @@ export default function App() {
     setShowApprovalPopup(false);
     setPopupBank(null);
   };
+
   const approveSingleBankConsent = () => {
     if (popupBank) {
       setBankConsents(prev => ({
@@ -399,6 +676,7 @@ export default function App() {
     setShowApproveSinglePopup(false);
     setPopupBank(null);
   };
+
   // Cashback handlers
   const handleCashbackToggle = (bankName, cashbackId) => {
     if (mainButtonState === 'current') return;
@@ -421,6 +699,7 @@ export default function App() {
       }
     }
   };
+
   // Update consent statuses from backend
   const updateConsentStatuses = async () => {
     if (chosenBanks.length === 0) return;
@@ -460,6 +739,7 @@ export default function App() {
       setIsUpdatingConsents(false);
     }
   };
+
   // Dropdown handlers
   const handleMouseEnter = () => {
     if (dropdownTimeoutRef.current) {
@@ -496,11 +776,13 @@ export default function App() {
     setSelectedCategory(category);
     setShowCategoryDropdown(false);
   };
+
   // Check if all banks are approved and transition to analyze state
   useEffect(() => {
     if (mainButtonState === 'wait' && areAllBanksValid(chosenBanks, bankConsents)) {
       setMainButtonState('analyze');
       setIsAnalyzingForConfirmation(true);
+      setAnalysisStartTime(Date.now()); // Record the start time
       // Simulate API call to get analysis results
       setTimeout(async () => {
         try {
@@ -567,14 +849,17 @@ export default function App() {
           setIsAnalyzingForConfirmation(false);
           setIsAnalyzed(true);
           setMainButtonState('confirm');
+          setAnalysisStartTime(null); // Clear the start time as analysis is done
         } catch (error) {
           console.error("Error fetching analysis results:", error);
           setIsAnalyzingForConfirmation(false);
+          setAnalysisStartTime(null); // Clear the start time on error
           alert("Не удалось получить результаты анализа. Пожалуйста, попробуйте снова.");
         }
       }, 5000); // 5 seconds
     }
-  }, [chosenBanks, bankConsents, mainButtonState]);
+  }, [chosenBanks, bankConsents, mainButtonState, login]); // Added login to dependency array for fetch call
+
   useEffect(() => {
     // Мок: загружаем из файла
     // setCashbackTransactions(transactionsMock);
@@ -586,6 +871,7 @@ export default function App() {
       .catch(() => setCashbackTransactions(transactionsMock));
     */
   }, []);
+
   // Cleanup
   useEffect(() => {
     return () => {
@@ -594,10 +880,12 @@ export default function App() {
       }
     };
   }, []);
+
   // Filtered banks (without sorting by chosen state)
-  const filteredBanks = ALL_BANKS.filter(bank => 
+  const filteredBanks = ALL_BANKS.filter(bank =>
     bank.name.includes(searchTerm)
   );
+
   // Calculate current income from categories
   const calculateCurrentIncome = () => {
     let total = 0;
@@ -609,6 +897,7 @@ export default function App() {
     });
     return total;
   };
+
   // Get categories with cashback totals
   const getCategoryCashbacks = () => {
     const categories = {};
@@ -626,18 +915,22 @@ export default function App() {
     });
     return categories;
   };
+
   const currentIncomeValue = calculateCurrentIncome();
   const categoryCashbacks = getCategoryCashbacks();
+
   // Get all unique categories from dynamic cashbacks
-  const allCategories = [...new Set(Object.values(BANK_CASHBACKS).flatMap(bank => 
+  const allCategories = [...new Set(Object.values(BANK_CASHBACKS).flatMap(bank =>
     bank.cashbacks?.map(c => c.category) || []
   ))];
+
   // Initialize selectedCategory with the first available category if not set
   useEffect(() => {
     if (allCategories.length > 0 && !selectedCategory) {
       setSelectedCategory(allCategories[0]);
     }
   }, [allCategories, selectedCategory]);
+
   // Screens
   if (currentPage === 'auth') {
     return (
@@ -656,6 +949,7 @@ export default function App() {
                 required
               />
             </div>
+            {/* Password field removed */}
             <button
               type="submit"
               className="w-full bg-gradient-to-r from-[#337357] to-[#4CAF7D] hover:from-[#2B6246] hover:to-[#3D8B63] text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 ease-in-out text-lg"
@@ -667,23 +961,21 @@ export default function App() {
       </div>
     );
   }
+
   if (currentPage === 'bank-selection') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] flex flex-col p-4">
-        {/* Fixed Header Section */}
-        <div className="fixed top-0 left-0 right-0 z-10 bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] p-4 border-b border-white/20">
-          <h1 className="text-2xl font-bold text-white mb-4 text-center">Выберите свои банки</h1>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white/20 border border-white/30 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#337357] focus:border-transparent"
-              placeholder="Поиск банков..."
-            />
-          </div>
+        {/* Fixed Header Section with Logout */}
+        <div className="fixed top-0 left-0 right-0 z-10 bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] p-4 border-b border-white/20 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-white text-center flex-1">Выберите свои банки</h1>
+          <button
+            onClick={handleLogout}
+            className="text-white hover:text-gray-300 text-sm flex items-center gap-1"
+          >
+            <LogOut className="w-4 h-4" /> {/* Door emoji */}
+          </button>
         </div>
+
         {/* Scrollable Bank List */}
         <div className="flex-1 overflow-y-auto space-y-2 mb-24 mt-32">
           {filteredBanks.map((bank) => {
@@ -709,6 +1001,7 @@ export default function App() {
             );
           })}
         </div>
+
         {/* Fixed Footer Button */}
         <div className="fixed bottom-4 left-4 right-4">
           <button
@@ -722,21 +1015,31 @@ export default function App() {
       </div>
     );
   }
+
   if (currentPage === 'bank-details') {
     const bankData = BANK_CASHBACKS[selectedBank.name];
     const currentSelected = selectedCashbacks[selectedBank.name] || [];
     const maxSelections = bankData?.maxSelections || 0;
     const remainingSelections = Math.max(0, maxSelections - currentSelected.length);
     const isEditingDisabled = mainButtonState === 'current';
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] flex flex-col p-6">
-        <button 
-          onClick={goBackToMain}
-          className="flex items-center gap-2 text-white mb-6 w-fit"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Назад к банкам
-        </button>
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={goBackToMain}
+            className="flex items-center gap-2 text-white w-fit"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Назад к банкам
+          </button>
+          <button
+            onClick={handleLogout}
+            className="text-white hover:text-gray-300 text-sm flex items-center gap-1"
+          >
+            <LogOut className="w-4 h-4" /> {/* Door emoji */}
+          </button>
+        </div>
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">{selectedBank.name}</h1>
           <p className="text-yellow-400 text-xl font-semibold">{isAnalyzed ? selectedBank.value : "??₽"}</p>
@@ -766,7 +1069,7 @@ export default function App() {
             const isSelected = currentSelected.includes(cashback.id);
             const canSelect = !isEditingDisabled && (isSelected || currentSelected.length < maxSelections);
             return (
-              <div 
+              <div
                 key={cashback.id}
                 onClick={() => canSelect && handleCashbackToggle(selectedBank.name, cashback.id)}
                 className={`bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 flex justify-between items-start cursor-pointer transition-all duration-200 hover:bg-white/20 ${
@@ -777,8 +1080,8 @@ export default function App() {
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-5 h-5 border-2 rounded flex items-center justify-center mt-1 ${
-                    isSelected 
-                      ? 'border-[#337357] bg-[#337357]' 
+                    isSelected
+                      ? 'border-[#337357] bg-[#337357]'
                       : 'border-gray-400'
                   }`}>
                     {isSelected && <Check className="w-3 h-3 text-white" />}
@@ -807,19 +1110,29 @@ export default function App() {
       </div>
     );
   }
+
   if (currentPage === 'category-transactions') {
     const transactions = cashbackTransactions?.[selectedCategory] || [];
     const totalCashback = transactions.reduce((sum, t) => sum + t.cashback, 0);
     const totalSpent = transactions.reduce((sum, t) => sum + t.amount, 0);
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] flex flex-col p-6">
-        <button 
-          onClick={goBackToCategories}
-          className="flex items-center gap-2 text-white mb-6 w-fit"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Назад к категориям
-        </button>
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={goBackToCategories}
+            className="flex items-center gap-2 text-white w-fit"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Назад к категориям
+          </button>
+          <button
+            onClick={handleLogout}
+            className="text-white hover:text-gray-300 text-sm flex items-center gap-1"
+          >
+            <LogOut className="w-4 h-4" /> {/* Door emoji */}
+          </button>
+        </div>
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">{selectedCategory}</h1>
           <p className="text-yellow-400 text-xl font-semibold">{totalCashback.toFixed(2)}₽ заработано</p>
@@ -829,7 +1142,7 @@ export default function App() {
           <h2 className="text-xl font-semibold text-white mb-4">Транзакции</h2>
           {transactions.length > 0 ? (
             transactions.map((transaction) => (
-              <div 
+              <div
                 key={transaction.id}
                 className={`bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 ${
                   transaction.optimal ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-red-500/50 bg-red-500/10'
@@ -874,12 +1187,13 @@ export default function App() {
       </div>
     );
   }
-  // Popups
+
+  // Main Screen
   return (
     <>
-      <OptimalCardPopup 
-        isOpen={showOptimalCardPopup} 
-        onClose={() => setShowOptimalCardPopup(false)} 
+      <OptimalCardPopup
+        isOpen={showOptimalCardPopup}
+        onClose={() => setShowOptimalCardPopup(false)}
         selectedCategory={selectedCategory || "Продукты"}
         onCategoryChange={handleCategoryDropdownOpen}
         bankCashbacks={BANK_CASHBACKS}
@@ -997,11 +1311,25 @@ export default function App() {
         onClose={() => setShowConfirmCashbackPopup(false)}
         onConfirm={confirmCashbackSelection}
       />
+
       <div className="min-h-screen bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] flex flex-col items-center p-4 overflow-hidden">
+        {/* Header with Login Info and Logout */}
+        <div className="w-full max-w-md flex justify-between items-center mt-4">
+          <div className="text-white">
+            <span>{login}</span> {/* Only login name */}
+          </div>
+          <button
+            onClick={handleLogout}
+            className="text-white hover:text-gray-300 text-sm flex items-center gap-1"
+          >
+            <LogOut className="w-4 h-4" /> {/* Door emoji */}
+          </button>
+        </div>
+
         {/* Main Button at 1/4 from top */}
-        <div className="mt-16 md:mt-24 w-full flex justify-center">
+        <div className="mt-8 md:mt-16 w-full flex justify-center">
           {mainButtonState === 'wait' && (
-            <button 
+            <button
               onClick={handleConfirmClick}
               className="bg-gray-500 text-white font-bold py-6 px-6 rounded-3xl shadow-lg text-xl flex items-center justify-center w-full max-w-md mx-auto cursor-pointer"
             >
@@ -1009,12 +1337,12 @@ export default function App() {
             </button>
           )}
           {mainButtonState === 'analyze' && (
-            <button 
+            <button
               onClick={handleConfirmClick}
               disabled={isAnalyzingForConfirmation}
               className={`${
-                isAnalyzingForConfirmation 
-                  ? 'bg-purple-700 animate-pulse' 
+                isAnalyzingForConfirmation
+                  ? 'bg-purple-700 animate-pulse'
                   : 'bg-gradient-to-r from-[#EE4266] to-[#FF6B8B] hover:from-[#D93A5C] hover:to-[#E55A7B]'
               } text-white font-bold py-6 px-6 rounded-3xl shadow-lg ${
                 isAnalyzingForConfirmation ? '' : 'hover:shadow-xl transform hover:scale-105'
@@ -1026,7 +1354,7 @@ export default function App() {
             </button>
           )}
           {mainButtonState === 'confirm' && (
-            <button 
+            <button
               onClick={handleConfirmCashback}
               className="bg-[#FFD23F] hover:bg-[#E6BD37] text-gray-900 font-bold py-6 px-6 rounded-3xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 ease-in-out text-xl flex items-center justify-center w-full max-w-md mx-auto"
             >
@@ -1034,7 +1362,7 @@ export default function App() {
             </button>
           )}
           {mainButtonState === 'current' && (
-            <button 
+            <button
               onClick={() => setShowOptimalCardPopup(true)}
               className="bg-gradient-to-r from-[#337357] to-[#4CAF7D] text-white font-bold py-6 px-6 rounded-3xl shadow-lg text-xl flex items-center justify-center w-full max-w-md mx-auto"
             >
@@ -1042,11 +1370,12 @@ export default function App() {
             </button>
           )}
         </div>
+
         {/* Fixed elements at 2/4 from top - MOVED HIGHER */}
-        <div className="mt-24 md:mt-32 w-full max-w-md space-y-6">
+        <div className="mt-8 md:mt-16 w-full max-w-md space-y-6">
           {mainButtonState === 'current' ? (
             <>
-              <div 
+              <div
                 className="relative"
                 ref={historyDropdownContainerRef}
                 onMouseEnter={handleHistoryMouseEnter}
