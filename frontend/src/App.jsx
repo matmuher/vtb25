@@ -69,7 +69,7 @@ const ConfirmCashbackPopup = ({ isOpen, onClose, onConfirm }) => {
           <h3 className="text-xl font-bold text-gray-800">Подтвердить кэшбэки</h3>
         </div>
         <p className="text-gray-600 mb-6">
-          После подтверждения категории кэшбэков будут установлены на этот месяц. Их нельзя будет редактировать позже.
+          После подтверждения мы установим выбранные категории кэшбеков на этот месяц. Выбрали всё, что хотели?
         </p>
         <div className="flex gap-3">
           <button
@@ -752,7 +752,7 @@ export default function App() {
             <div className="flex items-center gap-2 mt-2">
               <Info className="w-4 h-4 text-gray-400" />
               <span className="text-gray-400 text-sm">
-                Редактирование отключено в режиме текущего дохода
+                Кэшбеки на этотм месяц уже утверждены. Мы напомним, когда их можно будет выставить в следующий раз!
               </span>
             </div>
           )}
@@ -1005,7 +1005,7 @@ export default function App() {
               onClick={handleConfirmClick}
               className="bg-gray-500 text-white font-bold py-6 px-6 rounded-3xl shadow-lg text-xl flex items-center justify-center w-full max-w-md mx-auto cursor-pointer"
             >
-              Пожалуйста, одобрите согласия ⏳ 🔍
+              Пожалуйста, одобрите согласия 🖊️
             </button>
           )}
           {mainButtonState === 'analyze' && (
@@ -1038,7 +1038,7 @@ export default function App() {
               onClick={() => setShowOptimalCardPopup(true)}
               className="bg-gradient-to-r from-[#337357] to-[#4CAF7D] text-white font-bold py-6 px-6 rounded-3xl shadow-lg text-xl flex items-center justify-center w-full max-w-md mx-auto"
             >
-              Оплатить оптимальной картой
+              Оплатить оптимальной картой ⛳
             </button>
           )}
         </div>
@@ -1059,7 +1059,7 @@ export default function App() {
                   <div className="flex items-center gap-2">
                     <TrendingUp className="text-white text-xl" />
                     <span className="text-white font-medium">
-                      История кэшбэков
+                      Начисление кэшбэков
                     </span>
                   </div>
                   {isHistoryDropdownOpen ? (
