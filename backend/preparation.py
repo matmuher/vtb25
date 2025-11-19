@@ -94,7 +94,9 @@ def get_active_banks(user_name: str, db_path: str = "users.db"):
         "SELECT bank_name, consent_id, account_id FROM user_banks WHERE user_name = ? AND is_active = 1",
         (user_name,)
     )
-    return cursor.fetchall()
+    result = cursor.fetchall()
+    conn.close()
+    return result
 
 
 # Сделать запрос на получение согласия у активных банков, у которых consent_id=NULL
