@@ -962,12 +962,20 @@ export default function App() {
     );
   }
 
-  if (currentPage === 'bank-selection') {
+    if (currentPage === 'bank-selection') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] flex flex-col p-4">
-        {/* Fixed Header Section with Logout */}
+        {/* Fixed Header Section with Login and Logout */}
         <div className="fixed top-0 left-0 right-0 z-10 bg-gradient-to-br from-[#5E1675] to-[#8B2DA5] p-4 border-b border-white/20 flex justify-between items-center">
+          {/* Login Display in Top Left */}
+          <div className="text-white">
+            <span>{login}</span> {/* Only login name */}
+          </div>
+          
+          {/* Centered Title */}
           <h1 className="text-2xl font-bold text-white text-center flex-1">Выберите свои банки</h1>
+
+          {/* Logout Button in Top Right */}
           <button
             onClick={handleLogout}
             className="text-white hover:text-gray-300 text-sm flex items-center gap-1"
