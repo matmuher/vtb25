@@ -312,11 +312,11 @@ async def confirm_cashbacks(request: ConfirmationRequest):
 
                 if best_bank_name:
                     is_optimal = False
-                    advice = f"Если используешь карту {best_bank_name.upper()} для категории {category_raw}, то кешбек будет больше:)"
+                    advice = f"Если используете карту {best_bank_name.upper()} для категории {category_raw}, то кешбек будет больше:)"
                 else:
                     # Категория не выбрана ни в одном банке
                     is_optimal = False
-                    advice = f"Нет категории кешбека для '{category_raw}' среди выбранных тобой банков:("
+                    advice = f"Нет категории кешбека для '{category_raw}' среди выбранных вами банков:("
         else:
             # Банк, по которому была транзакция, не выбран пользователем
             # Ищем лучший кешбэк среди выбранных банок
@@ -331,11 +331,11 @@ async def confirm_cashbacks(request: ConfirmationRequest):
 
             if best_bank_name:
                 is_optimal = False
-                advice = f"Если используешь карту {best_bank_name.upper()} для категории {category_raw}, то кешбек будет больше:)"
+                advice = f"Если используете карту {best_bank_name.upper()} для категории {category_raw}, то кешбек будет больше:)"
             else:
                 # Категория не выбрана ни в одном банке
                 is_optimal = False
-                advice = f"Нет категории кешбека для '{category_raw}' среди выбранных тобой банков:("
+                advice = f"Нет категории кешбека для '{category_raw}' среди выбранных вами банков:("
 
         # Добавляем информацию о транзакции в словарь по категории
         if category_raw not in categorized_transactions:

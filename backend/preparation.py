@@ -113,19 +113,19 @@ def update_missing_consents(
     Запрос отправляется на https://{bank_name}.open.bankingapi.ru
     от имени requesting_bank (например, team089).
     """
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+    banks_needing_consent = []
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
 
-    # Получаем активные банки без consent_id
-    cursor.execute("""
-        SELECT bank_name
-        FROM user_banks
-        WHERE user_name = ? AND is_active = 1 AND (consent_id IS NULL OR consent_id = '')
-    """, (user_name,))
+        # Получаем активные банки без consent_id
+        cursor.execute("""
+            SELECT bank_name
+            FROM user_banks
+            WHERE user_name = ? AND is_active = 1 AND (consent_id IS NULL OR consent_id = '')
+        """, (user_name,))
 
-    banks_needing_consent = [row[0] for row in cursor.fetchall()]
+        banks_needing_consent = [row[0] for row in cursor.fetchall()]
     if not banks_needing_consent:
-        conn.close()
         return
 
     for bank_name in banks_needing_consent:
@@ -166,18 +166,20 @@ def update_missing_consents(
                 db_consent_value = request_id or None
 
             # Обновляем БД
-            cursor.execute("""
-                UPDATE user_banks
-                SET consent_id = ?
-                WHERE user_name = ? AND bank_name = ?
-            """, (db_consent_value, user_name, bank_name))
-
+            with sqlite3.connect(db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE user_banks
+                    SET consent_id = ?
+                    WHERE user_name = ? AND bank_name = ?
+                """, (db_consent_value, user_name, bank_name))
+                conn.commit()
+        
+        except sqlite3.OperationalError as e:
+            print(f"Ошибка при работе с базой данных у пользователя {user_name} для банка {bank_name}: {e}")
         except Exception as e:
             print(f"⚠️ Ошибка при создании согласия для банка {bank_name} пользователя {user_name}: {e}")
             continue
-
-    conn.commit()
-    conn.close()
 
 
 def waiting_for_approval(user_name: str, bank_name: str, consent_id: str, statuses_list: list):
