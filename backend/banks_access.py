@@ -162,18 +162,18 @@ def update_expired_tokens():
     supported_banks = BANK_CREDENTIALS.keys()
 
     try:
-        conn = sqlite3.connect('bank_tokens.db')
-        cursor = conn.cursor()
-
         for bank in supported_banks:
             print(f"Проверяем токен для банка: {bank}")
+            
+            row = False
+            with sqlite3.connect('bank_tokens.db') as conn:
+                cursor = conn.cursor()
+                # Получаем информацию о токене из БД
+                cursor.execute('''
+                    SELECT expires_in, add_time FROM tokens WHERE bank_name = ?
+                ''', (bank,))
 
-            # Получаем информацию о токене из БД
-            cursor.execute('''
-                SELECT expires_in, add_time FROM tokens WHERE bank_name = ?
-            ''', (bank,))
-
-            row = cursor.fetchone()
+                row = cursor.fetchone()
 
             if row:
                 expires_in, add_time_str = row
