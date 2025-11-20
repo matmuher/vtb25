@@ -68,8 +68,8 @@ def ensure_table_exists():
                 )
             ''')
             conn.commit()
-        except sqlite3.OperationalError as e:
-            print(f"Ошибка при работе с базой данных: {e}")
+    except sqlite3.OperationalError as e:
+        print(f"Ошибка при работе с базой данных: {e}")
             
 
 def get_bank_access_token(bank: str, client_id: str, client_secret: str) -> bool:
@@ -107,37 +107,39 @@ def get_bank_access_token(bank: str, client_id: str, client_secret: str) -> bool
 
         add_time = datetime.now()
 
-        conn = sqlite3.connect('bank_tokens.db')
-        cursor = conn.cursor()
+        with sqlite3.connect('bank_tokens.db') as conn:
+            cursor = conn.cursor()
 
-        # Создаём таблицу, если она не существует
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS tokens (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                bank_name TEXT NOT NULL,
-                access_token TEXT NOT NULL,
-                token_type TEXT NOT NULL,
-                client_id TEXT NOT NULL,
-                algorithm TEXT,
-                expires_in INTEGER,
-                add_time DATETIME NOT NULL
-            )
-        ''')
+            # Создаём таблицу, если она не существует
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS tokens (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    bank_name TEXT NOT NULL,
+                    access_token TEXT NOT NULL,
+                    token_type TEXT NOT NULL,
+                    client_id TEXT NOT NULL,
+                    algorithm TEXT,
+                    expires_in INTEGER,
+                    add_time DATETIME NOT NULL
+                )
+            ''')
 
-        cursor.execute('''
-            INSERT OR REPLACE INTO tokens (
-                bank_name, access_token, token_type, client_id, algorithm, expires_in, add_time
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (bank, access_token, token_type, retrieved_client_id, algorithm, expires_in, add_time))
+            cursor.execute('''
+                INSERT OR REPLACE INTO tokens (
+                    bank_name, access_token, token_type, client_id, algorithm, expires_in, add_time
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (bank, access_token, token_type, retrieved_client_id, algorithm, expires_in, add_time))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+            print(f"Токен для банка {bank} успешно получен и сохранён/обновлён.")
+            return True
 
-        print(f"Токен для банка {bank} успешно получен и сохранён/обновлён.")
-        return True
 
     except requests.exceptions.RequestException as e:
         print(f"Ошибка при выполнении запроса для {bank}: {e}")
+        return False
+    except sqlite3.OperationalError as e:
+        print(f"Ошибка работы с базой данных: {e}")
         return False
     except sqlite3.Error as e:
         print(f"Ошибка при работе с базой данных для {bank}: {e}")
