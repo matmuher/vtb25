@@ -1,6 +1,6 @@
 import sqlite3
 from VTBAPI_Requests import *
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 import json
 from typing import List, Dict, Any
@@ -568,30 +568,20 @@ def print_user_banks_info(user_name: str, db_path: str = "users.db"):
     print("-" * 80)
 
 def filter_transactions_last_31_days(transactions):
-  """
-  Фильтрует список транзакций, оставляя только те, у которых bookingDateTime
-  находится в пределах последних 31 дня от текущей даты.
+    threshold_date = datetime.now(timezone.utc) - timedelta(days=31)
+    filtered = []
+    for tx in transactions:
+        dt_str = tx.get("bookingDateTime")
+        if not dt_str:
+            continue
+        if dt_str.endswith('Z'):
+            dt_str = dt_str[:-1] + '+00:00'
+        booking_dt = datetime.fromisoformat(dt_str)  # aware в UTC
 
-  Args:
-    transactions: Список словарей транзакций.
-
-  Returns:
-    Список отфильтрованных транзакций.
-  """
-  # Определяем пороговую дату (31 день назад)
-  threshold_date = datetime.now() - timedelta(days=31)
-
-  # Фильтруем транзакции
-  filtered_transactions = []
-  for transaction in transactions:
-    # Преобразуем строку даты в объект datetime
-    booking_datetime = datetime.fromisoformat(transaction['bookingDateTime'].replace('Z', '+00:00'))
-
-    # Проверяем, попадает ли дата в диапазон
-    if booking_datetime >= threshold_date:
-      filtered_transactions.append(transaction)
-
-  return filtered_transactions
+        # Оба объекта теперь aware → сравнение безопасно
+        if booking_dt >= threshold_date:
+            filtered.append(tx)
+    return filtered
 
 def format_transaction_date(tx):
   """
