@@ -567,3 +567,53 @@ def print_user_banks_info(user_name: str, db_path: str = "users.db"):
 
     print("-" * 80)
 
+def filter_transactions_last_31_days(transactions):
+  """
+  Фильтрует список транзакций, оставляя только те, у которых bookingDateTime
+  находится в пределах последних 31 дня от текущей даты.
+
+  Args:
+    transactions: Список словарей транзакций.
+
+  Returns:
+    Список отфильтрованных транзакций.
+  """
+  # Определяем пороговую дату (31 день назад)
+  threshold_date = datetime.now() - timedelta(days=31)
+
+  # Фильтруем транзакции
+  filtered_transactions = []
+  for transaction in transactions:
+    # Преобразуем строку даты в объект datetime
+    booking_datetime = datetime.fromisoformat(transaction['bookingDateTime'].replace('Z', '+00:00'))
+
+    # Проверяем, попадает ли дата в диапазон
+    if booking_datetime >= threshold_date:
+      filtered_transactions.append(transaction)
+
+  return filtered_transactions
+
+def format_transaction_date(tx):
+  """
+  Извлекает и форматирует дату транзакции из словаря.
+
+  Args:
+    tx: Словарь транзакции.
+
+  Returns:
+    Строка с датой и временем в формате "ГГГГ-ММ-ДД ЧЧ:ММ" или None, если дата отсутствует.
+  """
+  transaction_date_raw = tx.get("bookingDateTime")
+  if transaction_date_raw:
+    # Проверяем формат даты и при необходимости конвертируем в объект datetime
+    dt = transaction_date_raw
+    if isinstance(transaction_date_raw, str):
+      # Если строка заканчивается на 'Z', заменяем на '+00:00' для корректного парсинга
+      if transaction_date_raw.endswith('Z'):
+        transaction_date_raw = transaction_date_raw[:-1] + '+00:00'
+      dt = datetime.fromisoformat(transaction_date_raw)
+
+    # Форматируем дату в нужный вид "ГГГГ-ММ-ДД ЧЧ:ММ"
+    return dt.strftime("%Y-%m-%d %H:%M")
+
+  return None # Возвращаем None, если bookingDateTime нет в словаре

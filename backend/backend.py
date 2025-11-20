@@ -218,6 +218,9 @@ async def confirm_cashbacks(request: ConfirmationRequest):
 
         logger.info(f"Fetching transactions for user '{user_login}' from {from_date} to {to_date}")
         all_transactions = fetch_all_transactions(user_login, from_date=from_date, to_date=to_date)
+        
+        # Дополнительная обработка на всякий случай
+        all_transactions = filter_transactions_last_31_days(all_transactions)
     except Exception as e:
         logger.error(f"Error fetching transactions for user '{user_login}': {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch transaction history.")
@@ -273,17 +276,10 @@ async def confirm_cashbacks(request: ConfirmationRequest):
         # --- НОВОЕ: Извлечение даты транзакции ---
         # Предполагаем, что дата приходит в формате ISO 8601 в поле 'bookingDate' или 'valueDate'
         # Можно адаптировать под конкретное поле из API банка
-        transaction_date_raw = tx.get("bookingDateTime")
-        if transaction_date_raw:
-            # Проверяем формат даты и при необходимости конвертируем в строку в формате ISO 8601
-            # Если дата уже строка в нужном формате, используем как есть
-            transaction_date = transaction_date_raw
-            if isinstance(transaction_date_raw, datetime):
-                 transaction_date = transaction_date_raw.isoformat()
-        else:
-            # Если дата не найдена, используем текущую дату или пропускаем
-            transaction_date = datetime.now().isoformat() # или continue, чтобы пропустить
-            logger.warning(f"Transaction {tx.get('transactionId')} has no date, using current time.")
+        transaction_date = format_transaction_date(tx)
+        if not transaction_date:
+            continue
+            logger.warning(f"Transaction {tx.get('transactionId')} has no date, skip it.")
 
         # Определяем, был ли кешбэк оптимальным
         is_optimal = False
@@ -355,5 +351,3 @@ async def confirm_cashbacks(request: ConfirmationRequest):
     # 4. Формирование финального ответа
     response_data = categorized_transactions
     return response_data
-
-# uvicorn backend:app --reload &
