@@ -14,22 +14,23 @@ def get_token_for_bank(bank_name: str, db_path: str = "bank_tokens.db"):
     :param db_path: Путь к файлу SQLite с токенами (по умолчанию "bank_tokens.db")
     :return: access_token или None, если не найден
     """
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT access_token
-        FROM tokens
-        WHERE bank_name = ?
-        ORDER BY add_time DESC
-        LIMIT 1
-    """, (bank_name,))
+            cursor.execute("""
+                SELECT access_token
+                FROM tokens
+                WHERE bank_name = ?
+                ORDER BY add_time DESC
+                LIMIT 1
+            """, (bank_name,))
 
-    result = cursor.fetchone()
-    conn.close()
-
-    return result[0] if result else None
-
+            result = cursor.fetchone()
+            return result[0] if result else None
+    except sqlite3.OperationalError as e:
+        print(f"Ошибка при работе с базой данных: {e}")
+        return None
 
 # Помещаем банки в БД
 def sync_user_banks(user_name: str, bank_list: List[str], db_path: str = "users.db"):
