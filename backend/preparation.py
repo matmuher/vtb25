@@ -140,6 +140,7 @@ def update_missing_consents(
             base_url = f"https://{bank_name}.open.bankingapi.ru"
 
             # Отправляем запрос на согласие
+            print(f"Отправляем запрос на согласие {user_name} по адресу {base_url}, acc_token={acc_token}")
             response = AccountConsentsRequest(
                 client_id=user_name,
                 permissions=["ReadAccountsDetail", "ReadBalances", "ReadTransactionsDetail"],
@@ -154,6 +155,7 @@ def update_missing_consents(
             status = response.get("status")
             request_id = response.get("request_id")
             consent_id_from_response = response.get("consent_id")
+            print(f"status={status}, request_id={request_id}, consent_id_from_response={consent_id_from_response}")
 
             # Определяем, что сохранить в consent_id
             if status == "approved":
