@@ -6,6 +6,8 @@ import random
 import logging
 import json
 from process_user import *
+from datetime import datetime, timedelta
+
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
