@@ -459,6 +459,9 @@ def fetch_all_transactions(
     bank_rows = cursor.fetchall()
     conn.close()
 
+    if not bank_rows:
+        print(f"bank_rows у {user_name} пусто")
+
     for bank_name, consent_id, account_ids_json in bank_rows:
         try:
             account_ids = json.loads(account_ids_json)
@@ -467,6 +470,7 @@ def fetch_all_transactions(
             continue
 
         if not account_ids:
+            print(f"Нет account_ids для {bank_name} у {user_name}")
             continue
 
         # Получаем access_token для целевого банка из базы токенов
@@ -495,6 +499,7 @@ def fetch_all_transactions(
 
                     transactions = response.get("data", {}).get("transaction", [])
                     if not transactions:
+                        print(f"Закончен прием транзакций по счету {acc_id} в {bank_name}")
                         break  # Больше нет данных
 
                     # Добавляем мета-информацию
@@ -507,6 +512,7 @@ def fetch_all_transactions(
 
                     # Если получено меньше, чем limit — значит, это последняя страница
                     if len(transactions) < page_size:
+                        print(f"Получена последняя страница транзакций по счету {acc_id} в {bank_name}")
                         break
 
                     page += 1
