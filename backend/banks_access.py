@@ -52,22 +52,25 @@ def parse_banks_json(file_path: str):
 
 def ensure_table_exists():
     """Создаёт таблицу tokens, если она не существует."""
-    conn = sqlite3.connect('bank_tokens.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS tokens (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            bank_name TEXT NOT NULL,
-            access_token TEXT NOT NULL,
-            token_type TEXT NOT NULL,
-            client_id TEXT NOT NULL,
-            algorithm TEXT,
-            expires_in INTEGER,
-            add_time DATETIME NOT NULL
-        )
-    ''')
-    conn.commit()
-    conn.close()
+    try:
+        with sqlite3.connect('bank_tokens.db') as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS tokens (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    bank_name TEXT NOT NULL,
+                    access_token TEXT NOT NULL,
+                    token_type TEXT NOT NULL,
+                    client_id TEXT NOT NULL,
+                    algorithm TEXT,
+                    expires_in INTEGER,
+                    add_time DATETIME NOT NULL
+                )
+            ''')
+            conn.commit()
+        except sqlite3.OperationalError as e:
+            print(f"Ошибка при работе с базой данных: {e}")
+            
 
 def get_bank_access_token(bank: str, client_id: str, client_secret: str) -> bool:
     """
