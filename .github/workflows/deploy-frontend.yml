@@ -1,0 +1,36 @@
+name: Deploy
+on:
+  push:
+    branches: [ master ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    
+    - name: Deploy to server
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.SERVER_IP }} "
+          cd ~/vtb25 &&
+          git checkout master &&
+          git pull origin master &&
+          
+          # Install backend dependencies using the specific venv
+          cd backend &&
+          ~/vtb25/backend/venv/bin/pip install -r requirements.txt &&
+          cd .. &&
+          
+          # Build frontend and install serve
+          cd frontend &&
+          npm install &&
+          npm run build &&
+          cd .. &&
+          
+          # Restart all services using single ecosystem file
+          pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
+        "
