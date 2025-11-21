@@ -1,37 +1,55 @@
-// Saves options to chrome.storage
-function saveOptions() {
-    const login = document.getElementById('loginInput').value;
-    chrome.storage.sync.set({
-        userLogin: login
-    }, function() {
-        // Update status to let user know options were saved.
-        console.log('Login saved to storage:', login);
-        if (chrome.runtime.lastError) {
-            console.error("Error saving login:", chrome.runtime.lastError);
-        } else {
-            // Optional: Show a temporary message
-            const saveButton = document.getElementById('saveButton');
-            const originalText = saveButton.textContent;
-            saveButton.textContent = 'Saved!';
-            setTimeout(() => {
-                 saveButton.textContent = originalText;
-            }, 2000);
-        }
-    });
+// Function to get the current active tab's URL
+async function getCurrentTabUrl() {
+    try {
+        // Query for the active tab in the current window
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        return tab.url;
+    } catch (error) {
+        console.error("Error getting current tab URL:", error);
+        return "Error retrieving URL";
+    }
 }
 
-// Restores options from chrome.storage
-function restoreOptions() {
-    chrome.storage.sync.get('userLogin', function(result) {
-        if (chrome.runtime.lastError) {
-            console.error("Error restoring login:", chrome.runtime.lastError);
-            // Optionally, clear the input or show an error
-            document.getElementById('loginInput').value = '';
+// Function to get the saved login from storage (using browser.storage.local to match the React app)
+async function getSavedLogin() {
+    try {
+        // Use chrome.storage.local to match the React app's storage method
+        const result = await chrome.storage.local.get('userLogin');
+        // Check if the key exists in the result object
+        if (result.hasOwnProperty('userLogin')) {
+            return result.userLogin || 'Not set'; // Return the value or 'Not set' if it's an empty string
         } else {
-            document.getElementById('loginInput').value = result.userLogin || '';
+            // Key doesn't exist in storage
+            return 'Not set';
         }
-    });
+    } catch (error) {
+        console.error("Error getting saved login from local storage:", error);
+        return "Error retrieving login"; // Return an error message
+    }
 }
 
-document.addEventListener('DOMContentLoaded', restoreOptions);
-document.getElementById('saveButton').addEventListener('click', saveOptions);
+// Main function to populate the popup when it opens
+async function populatePopup() {
+    try {
+        // Get the current URL
+        const currentUrl = await getCurrentTabUrl();
+        document.getElementById('currentUrl').textContent = currentUrl;
+        document.getElementById('currentUrl').classList.remove('loading');
+
+        // Get the saved login from local storage
+        const userLogin = await getSavedLogin();
+        document.getElementById('userLogin').textContent = userLogin;
+        document.getElementById('userLogin').classList.remove('loading');
+
+    } catch (error) {
+        console.error("Error populating popup:", error);
+        // Optionally, update the UI to show errors
+        document.getElementById('currentUrl').textContent = "Error loading URL";
+        document.getElementById('currentUrl').classList.remove('loading');
+        document.getElementById('userLogin').textContent = "Error loading login";
+        document.getElementById('userLogin').classList.remove('loading');
+    }
+}
+
+// Run the populate function when the popup's DOM is loaded
+document.addEventListener('DOMContentLoaded', populatePopup);

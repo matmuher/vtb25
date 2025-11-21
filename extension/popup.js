@@ -1,3 +1,25 @@
+// popup.js
+
+// Function to get the saved login from storage (CHANGED TO LOCAL)
+async function getSavedLogin() {
+    try {
+        // CHANGED: Use chrome.storage.local instead of chrome.storage.sync
+        const result = await chrome.storage.local.get('userLogin');
+        console.log("Retrieved from storage.local:", result); // Debug log
+        // Check if the key exists in the result object
+        if (result.hasOwnProperty('userLogin')) {
+            return result.userLogin || 'Not set'; // Return the value or 'Not set' if it's an empty string
+        } else {
+            // Key doesn't exist in storage
+            console.log("userLogin key not found in storage.local"); // Debug log
+            return 'Not set';
+        }
+    } catch (error) {
+        console.error("Error getting saved login from local storage:", error);
+        return "Error retrieving login"; // Return an error message
+    }
+}
+
 // Function to get the current active tab's URL
 async function getCurrentTabUrl() {
     try {
@@ -7,23 +29,6 @@ async function getCurrentTabUrl() {
     } catch (error) {
         console.error("Error getting current tab URL:", error);
         return "Error retrieving URL";
-    }
-}
-
-// Function to get the saved login from storage
-async function getSavedLogin() {
-    try {
-        const result = await chrome.storage.sync.get('userLogin');
-        // Check if the key exists in the result object
-        if (result.hasOwnProperty('userLogin')) {
-            return result.userLogin || 'Not set'; // Return the value or 'Not set' if it's an empty string
-        } else {
-            // Key doesn't exist in storage
-            return 'Not set';
-        }
-    } catch (error) {
-        console.error("Error getting saved login:", error);
-        return "Error retrieving login"; // Return an error message
     }
 }
 
@@ -39,6 +44,7 @@ async function populatePopup() {
         const userLogin = await getSavedLogin();
         document.getElementById('userLogin').textContent = userLogin;
         document.getElementById('userLogin').classList.remove('loading');
+        console.log("Populated login:", userLogin); // Debug log
 
     } catch (error) {
         console.error("Error populating popup:", error);
