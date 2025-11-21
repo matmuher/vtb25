@@ -1,6 +1,68 @@
+// Add this directive at the very top
+'use client';
+
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, ChevronUp, Search, Check, X, ArrowLeft, Star, Info, AlertTriangle, ExternalLink, AlertCircle, AlertOctagon, Trash2, CreditCard, TrendingUp, Wallet, RefreshCw, LogOut } from "lucide-react";
 import transactionsMock from './mock/transactions_new.json';
+
+// --- NEW: Storage Helper Functions with Reduced Logging ---
+let storageEnvironmentChecked = false; // Flag to ensure environment is logged only once
+const logStorageEnvironment = () => {
+  if (!storageEnvironmentChecked) {
+    const isExt = typeof browser !== 'undefined' && typeof browser.storage !== 'undefined';
+    console.log(isExt ? "Using browser.storage (Extension environment)" : "Using localStorage (Web environment)");
+    storageEnvironmentChecked = true;
+    return isExt;
+  }
+  // Return the result based on the initial check
+  return typeof browser !== 'undefined' && typeof browser.storage !== 'undefined';
+};
+
+const isExtensionEnvironment = () => {
+  return logStorageEnvironment();
+};
+
+const loadFromStorage = async (key, defaultValue) => {
+  if (isExtensionEnvironment()) {
+    try {
+      const result = await browser.storage.local.get(key);
+      return result[key] !== undefined ? result[key] : defaultValue;
+    } catch (e) {
+      console.error("Error loading from browser.storage:", e);
+      return defaultValue;
+    }
+  } else {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  }
+};
+
+const saveToStorage = async (key, value) => {
+  if (isExtensionEnvironment()) {
+    try {
+      await browser.storage.local.set({ [key]: value });
+    } catch (e) {
+      console.error("Error saving to browser.storage:", e);
+    }
+  } else {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+};
+
+const removeFromStorage = async (key) => {
+  if (isExtensionEnvironment()) {
+    try {
+      await browser.storage.local.remove(key);
+    } catch (e) {
+      console.error("Error removing from browser.storage:", e);
+    }
+  } else {
+    localStorage.removeItem(key);
+  }
+};
+
+// --- END NEW: Storage Helper Functions with Reduced Logging ---
+
 // Constants
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 console.log('Full import.meta.env:', import.meta.env);
@@ -19,6 +81,7 @@ const ALL_BANKS = [
   { id: 23, name: "Vbank", value: "44 ₽" },
   { id: 27, name: "Zbank", value: "1 ₽" }
 ];
+
 // Helper Functions
 const getBankState = (bank, bankConsents) => {
   const consentData = bankConsents[bank.id];
@@ -126,10 +189,12 @@ const OptimalCardPopup = ({ isOpen, onClose, selectedCategory, onCategoryChange,
       }
     }
   });
+
   // Get all unique categories
   const allCategories = [...new Set(Object.values(bankCashbacks || {}).flatMap(bank =>
     bank.cashbacks?.map(c => c.category) || []
   ))];
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl p-6 w-full max-w-md">
@@ -193,6 +258,7 @@ const CategoryDropdown = ({ isOpen, onClose, categories, onSelect, selectedCateg
       }
     }
   });
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl p-6 w-full max-w-md">
@@ -231,49 +297,22 @@ const CategoryDropdown = ({ isOpen, onClose, categories, onSelect, selectedCateg
     </div>
   );
 };
+
 export default function App() {
-  // Load initial state from localStorage
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    const savedLogin = localStorage.getItem('userLogin');
-    return !!savedLogin; // Check if login exists in storage
-  });
-  const [login, setLogin] = useState(() => {
-    return localStorage.getItem('userLogin') || '';
-  });
-  const [currentPage, setCurrentPage] = useState(() => {
-    if (isLoggedIn) {
-      return localStorage.getItem('currentPage') || 'main'; // Default to main if logged in
-    } else {
-      return 'auth'; // Default to auth if not logged in
-    }
-  });
-  const [selectedBank, setSelectedBank] = useState(() => {
-    const saved = localStorage.getItem('selectedBank');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [selectedCategory, setSelectedCategory] = useState(() => {
-    const saved = localStorage.getItem('selectedCategory');
-    return saved ? JSON.parse(saved) : null;
-  });
+  // --- NEW: State Initialization (Synchronous Defaults) ---
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Initialize as false, will be set after loading
+  const [login, setLogin] = useState('');
+  const [currentPage, setCurrentPage] = useState('auth'); // Default to auth initially
+  const [selectedBank, setSelectedBank] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isHistoryDropdownOpen, setIsHistoryDropdownOpen] = useState(false);
   const [showOptimalCardPopup, setShowOptimalCardPopup] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  // const [login, setLogin] = useState(''); // Moved up to load from storage
-  // const [password, setPassword] = useState(''); // Not stored, removed
-  const [chosenBanks, setChosenBanks] = useState(() => {
-    const saved = localStorage.getItem('chosenBanks');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [chosenBanks, setChosenBanks] = useState([]); // Initialize as empty array
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCashbacks, setSelectedCashbacks] = useState(() => {
-    const saved = localStorage.getItem('selectedCashbacks');
-    return saved ? JSON.parse(saved) : {};
-  });
-  const [bankConsents, setBankConsents] = useState(() => {
-    const saved = localStorage.getItem('bankConsents');
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [selectedCashbacks, setSelectedCashbacks] = useState({}); // Initialize as empty object
+  const [bankConsents, setBankConsents] = useState({}); // Initialize as empty object
   const [showConsentPopup, setShowConsentPopup] = useState(false);
   const [showApprovalPopup, setShowApprovalPopup] = useState(false);
   const [showInvalidBanksPopup, setShowInvalidBanksPopup] = useState(false);
@@ -282,45 +321,17 @@ export default function App() {
   const [showApproveAllPopup, setShowApproveAllPopup] = useState(false);
   const [showApproveSinglePopup, setShowApproveSinglePopup] = useState(false);
   const [popupBank, setPopupBank] = useState(null);
-  const [expandedBanks, setExpandedBanks] = useState(() => {
-    const saved = localStorage.getItem('expandedBanks');
-    return saved ? JSON.parse(saved) : {};
-  });
-  const [mainButtonState, setMainButtonState] = useState(() => {
-    if (isLoggedIn && chosenBanks.length > 0 && areAllBanksValid(chosenBanks, bankConsents)) {
-      // Determine state based on analysis status and stored button state
-      const storedState = localStorage.getItem('mainButtonState');
-      if (storedState === 'current' || storedState === 'confirm' || storedState === 'analyze') {
-        return storedState;
-      } else if (localStorage.getItem('isAnalyzed') === 'true') {
-        return 'confirm'; // Assume confirm state if analyzed
-      } else {
-        return 'analyze'; // Assume analyze state if all banks are valid
-      }
-    } else {
-      return 'wait'; // Default state if not logged in or banks are invalid
-    }
-  });
-  const [isAnalyzed, setIsAnalyzed] = useState(() => {
-    return localStorage.getItem('isAnalyzed') === 'true';
-  });
+  const [expandedBanks, setExpandedBanks] = useState({}); // Initialize as empty object
+  const [mainButtonState, setMainButtonState] = useState('wait'); // Default state
+  const [isAnalyzed, setIsAnalyzed] = useState(false); // Initialize as false
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isAnalyzingForConfirmation, setIsAnalyzingForConfirmation] = useState(() => {
-    return localStorage.getItem('isAnalyzingForConfirmation') === 'true';
-  });
-  const [analysisStartTime, setAnalysisStartTime] = useState(() => {
-      const savedTime = localStorage.getItem('analysisStartTime');
-      return savedTime ? parseInt(savedTime, 10) : null;
-  });
+  const [isAnalyzingForConfirmation, setIsAnalyzingForConfirmation] = useState(false); // Initialize as false
+  const [analysisStartTime, setAnalysisStartTime] = useState(null); // Initialize as null
   const [isUpdatingConsents, setIsUpdatingConsents] = useState(false);
-  const [BANK_CASHBACKS, setBankCashbacks] = useState(() => {
-    const saved = localStorage.getItem('BANK_CASHBACKS');
-    return saved ? JSON.parse(saved) : {};
-  });
-  const [cashbackTransactions, setCashbackTransactions] = useState(() => {
-    const saved = localStorage.getItem('cashbackTransactions');
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [BANK_CASHBACKS, setBankCashbacks] = useState({}); // Initialize as empty object
+  const [cashbackTransactions, setCashbackTransactions] = useState({}); // Initialize as empty object
+  // --- END NEW: State Initialization ---
+
   const dropdownContainerRef = useRef(null);
   const historyDropdownContainerRef = useRef(null);
   const dropdownTimeoutRef = useRef(null);
@@ -328,46 +339,120 @@ export default function App() {
   // Ref to keep track of the previous page
   const prevPageRef = useRef(currentPage);
 
-  // Function to save state to localStorage
-  const saveStateToStorage = () => {
-    if (isLoggedIn) {
-      localStorage.setItem('userLogin', login);
-      localStorage.setItem('currentPage', currentPage);
-      localStorage.setItem('selectedBank', JSON.stringify(selectedBank));
-      localStorage.setItem('selectedCategory', JSON.stringify(selectedCategory));
-      localStorage.setItem('chosenBanks', JSON.stringify(chosenBanks));
-      localStorage.setItem('selectedCashbacks', JSON.stringify(selectedCashbacks));
-      localStorage.setItem('bankConsents', JSON.stringify(bankConsents));
-      localStorage.setItem('expandedBanks', JSON.stringify(expandedBanks));
-      localStorage.setItem('mainButtonState', mainButtonState);
-      localStorage.setItem('isAnalyzed', isAnalyzed.toString());
-      localStorage.setItem('isAnalyzingForConfirmation', isAnalyzingForConfirmation.toString());
-      if (analysisStartTime !== null) {
-          localStorage.setItem('analysisStartTime', analysisStartTime.toString());
-      } else {
-          localStorage.removeItem('analysisStartTime'); // Clear if not analyzing
+  // NEW EFFECT: Load initial state from storage asynchronously on component mount
+  useEffect(() => {
+    const loadInitialState = async () => {
+      try {
+        const savedLogin = await loadFromStorage('userLogin', null);
+        const loggedIn = !!savedLogin; // Check if login exists in storage
+
+        setIsLoggedIn(loggedIn);
+        setLogin(savedLogin || '');
+
+        if (loggedIn) {
+          // Only load other states if logged in
+          setCurrentPage(await loadFromStorage('currentPage', 'main'));
+          setSelectedBank(await loadFromStorage('selectedBank', null));
+          setSelectedCategory(await loadFromStorage('selectedCategory', null));
+          setChosenBanks(prev => {
+            // Ensure default value is always an array
+            const loaded = loadFromStorage('chosenBanks', []);
+            return Array.isArray(loaded) ? loaded : [];
+          });
+          setSelectedCashbacks(prev => {
+            // Ensure default value is always an object
+            const loaded = loadFromStorage('selectedCashbacks', {});
+            return typeof loaded === 'object' && loaded !== null && !Array.isArray(loaded) ? loaded : {};
+          });
+          setBankConsents(prev => {
+            // Ensure default value is always an object
+            const loaded = loadFromStorage('bankConsents', {});
+            return typeof loaded === 'object' && loaded !== null && !Array.isArray(loaded) ? loaded : {};
+          });
+          setExpandedBanks(prev => {
+            // Ensure default value is always an object
+            const loaded = loadFromStorage('expandedBanks', {});
+            return typeof loaded === 'object' && loaded !== null && !Array.isArray(loaded) ? loaded : {};
+          });
+
+          const storedButtonState = await loadFromStorage('mainButtonState', null);
+          if (storedButtonState === 'current' || storedButtonState === 'confirm' || storedButtonState === 'analyze') {
+            setMainButtonState(storedButtonState);
+          } else if (await loadFromStorage('isAnalyzed', false)) {
+            setMainButtonState('confirm');
+          } else {
+            setMainButtonState('analyze');
+          }
+
+          setIsAnalyzed(await loadFromStorage('isAnalyzed', false));
+          setIsAnalyzingForConfirmation(await loadFromStorage('isAnalyzingForConfirmation', false));
+          const savedTime = await loadFromStorage('analysisStartTime', null);
+          setAnalysisStartTime(savedTime ? parseInt(savedTime, 10) : null);
+
+          setBankCashbacks(prev => {
+            // Ensure default value is always an object
+            const loaded = loadFromStorage('BANK_CASHBACKS', {});
+            return typeof loaded === 'object' && loaded !== null && !Array.isArray(loaded) ? loaded : {};
+          });
+          setCashbackTransactions(prev => {
+            // Ensure default value is always an object
+            const loaded = loadFromStorage('cashbackTransactions', {});
+            return typeof loaded === 'object' && loaded !== null && !Array.isArray(loaded) ? loaded : {};
+          });
+        } else {
+          // If not logged in, ensure currentPage is 'auth'
+          setCurrentPage('auth');
+        }
+      } catch (error) {
+        console.error("Error loading initial state:", error);
+        // Optionally, set an error state or show a message
+        // For now, we'll just log and let the component use default initial states
       }
-      localStorage.setItem('BANK_CASHBACKS', JSON.stringify(BANK_CASHBACKS));
-      localStorage.setItem('cashbackTransactions', JSON.stringify(cashbackTransactions));
+    };
+
+    loadInitialState();
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  // Function to save state to storage
+  const saveStateToStorage = async () => {
+    if (isLoggedIn) { // Only save if logged in
+      await saveToStorage('userLogin', login);
+      await saveToStorage('currentPage', currentPage);
+      await saveToStorage('selectedBank', selectedBank);
+      await saveToStorage('selectedCategory', selectedCategory);
+      await saveToStorage('chosenBanks', chosenBanks);
+      await saveToStorage('selectedCashbacks', selectedCashbacks);
+      await saveToStorage('bankConsents', bankConsents);
+      await saveToStorage('expandedBanks', expandedBanks);
+      await saveToStorage('mainButtonState', mainButtonState);
+      await saveToStorage('isAnalyzed', isAnalyzed);
+      await saveToStorage('isAnalyzingForConfirmation', isAnalyzingForConfirmation);
+      if (analysisStartTime !== null) {
+        await saveToStorage('analysisStartTime', analysisStartTime);
+      } else {
+        await removeFromStorage('analysisStartTime'); // Clear if not analyzing
+      }
+      await saveToStorage('BANK_CASHBACKS', BANK_CASHBACKS);
+      await saveToStorage('cashbackTransactions', cashbackTransactions);
     }
   };
 
-  // Function to clear state from localStorage
-  const clearStateFromStorage = () => {
-    localStorage.removeItem('userLogin');
-    localStorage.removeItem('currentPage');
-    localStorage.removeItem('selectedBank');
-    localStorage.removeItem('selectedCategory');
-    localStorage.removeItem('chosenBanks');
-    localStorage.removeItem('selectedCashbacks');
-    localStorage.removeItem('bankConsents');
-    localStorage.removeItem('expandedBanks');
-    localStorage.removeItem('mainButtonState');
-    localStorage.removeItem('isAnalyzed');
-    localStorage.removeItem('isAnalyzingForConfirmation');
-    localStorage.removeItem('analysisStartTime');
-    localStorage.removeItem('BANK_CASHBACKS');
-    localStorage.removeItem('cashbackTransactions');
+  // Function to clear state from storage
+  const clearStateFromStorage = async () => {
+    await removeFromStorage('userLogin');
+    await removeFromStorage('currentPage');
+    await removeFromStorage('selectedBank');
+    await removeFromStorage('selectedCategory');
+    await removeFromStorage('chosenBanks');
+    await removeFromStorage('selectedCashbacks');
+    await removeFromStorage('bankConsents');
+    await removeFromStorage('expandedBanks');
+    await removeFromStorage('mainButtonState');
+    await removeFromStorage('isAnalyzed');
+    await removeFromStorage('isAnalyzingForConfirmation');
+    await removeFromStorage('analysisStartTime');
+    await removeFromStorage('BANK_CASHBACKS');
+    await removeFromStorage('cashbackTransactions');
   };
 
   // Save state whenever relevant state variables change
@@ -477,6 +562,12 @@ export default function App() {
 
   // Bank selection handlers
   const handleBankToggle = (bank) => {
+    // FIXED: Ensure chosenBanks is an array before calling filter
+    if (!Array.isArray(chosenBanks)) {
+        console.error("chosenBanks is not an array:", chosenBanks);
+        setChosenBanks([]); // Reset to a safe state
+        return;
+    }
     if (chosenBanks.find(b => b.id === bank.id)) {
       setChosenBanks(chosenBanks.filter(b => b.id !== bank.id));
       setSelectedCashbacks(prev => {
@@ -517,7 +608,7 @@ export default function App() {
     // Note: Password is not stored for security
     setCurrentPage('bank-selection');
   };
-  const handleLogout = () => {
+  const handleLogout = async () => { // Make handleLogout async
     setIsLoggedIn(false);
     setLogin('');
     setCurrentPage('auth');
@@ -535,7 +626,7 @@ export default function App() {
     setAnalysisStartTime(null); // Clear analysis start time
     setBankCashbacks({});
     setCashbackTransactions({});
-    clearStateFromStorage(); // Clear all stored data
+    await clearStateFromStorage(); // Clear all stored data
   };
   const confirmBanks = () => {
     setCurrentPage('main');
@@ -856,7 +947,6 @@ export default function App() {
     }
   }, [chosenBanks, bankConsents, mainButtonState, login]); // Added login to dependency array for fetch call
 
-
   useEffect(() => {
     // Мок: загружаем из файла
     // setCashbackTransactions(transactionsMock);
@@ -927,6 +1017,15 @@ export default function App() {
       setSelectedCategory(allCategories[0]);
     }
   }, [allCategories, selectedCategory]);
+
+  // --- Conditional Rendering based on loading state (optional) ---
+  // You might want to render a loading spinner while initial state loads
+  // For now, we'll just return null or a basic placeholder if not loaded
+  // A more robust way would be to have a 'loading' state variable set in the useEffect above
+  if ( /* Add a loading state check here if desired, e.g., loadingState === 'initial' */ false) {
+    return <div>Loading...</div>; // Or your loading component
+  }
+  // --- End Conditional Rendering ---
 
   // Screens
   if (currentPage === 'auth') {

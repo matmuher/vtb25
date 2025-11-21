@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Cashback Helper",
+  "version": "1.0",
+  "description": "Basic example for cashback extension",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "options_page": "dist/index.html",
+  "icons": {
+    "16": "icon16.png"
+  },
+  "browser_specific_settings": {
+  "gecko": {
+    "id": "@cashback-addon",
+    "strict_min_version": "58.0"
+  }
+}
+}

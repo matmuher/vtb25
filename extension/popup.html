@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cashback Helper Popup</title>
+    <style>
+        body {
+            width: 300px; /* Adjust width as needed */
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .info-item {
+             margin-bottom: 10px;
+        }
+        .info-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 80px; /* Adjust width as needed */
+        }
+        .info-value {
+            word-break: break-all; /* Handle long URLs nicely */
+        }
+         .loading {
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h2>Cashback Helper</h2>
+
+    <div class="info-item">
+        <span class="info-label">Current URL:</span>
+        <span id="currentUrl" class="info-value loading">Loading...</span>
+    </div>
+
+    <div class="info-item">
+        <span class="info-label">User Login:</span>
+        <span id="userLogin" class="info-value loading">Loading...</span>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
