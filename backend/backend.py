@@ -7,8 +7,8 @@ import logging
 import json
 from process_user import *
 from datetime import datetime, timedelta
-
 from fastapi.middleware.cors import CORSMiddleware
+import random
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -60,6 +60,11 @@ class TransactionInfo(BaseModel):
     hint: str
     paymentBank: str
     date: str
+
+class OptimalPay(BaseModel):
+    user_login: str
+    geo: str # may be null
+    url: str # may be null
 
 # --- Глобальное хранилище (заменить на БД в проде) ---
 
@@ -353,3 +358,42 @@ async def confirm_cashbacks(request: ConfirmationRequest):
     # 4. Формирование финального ответа
     response_data = categorized_transactions
     return response_data
+
+
+@app.get("/api/optimal_pay")
+async def login(data: OptimalPay):
+    if not data.user_login:
+        raise HTTPException(status_code=400, detail="Login is required")
+
+    logger.info(f"User '{data.user_login}' optimal_pay gotten.")
+
+    tuple_list = []
+    with sqlite3.connect("users.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT bank_name FROM user_banks WHERE user_name = ? and is_active = 1",
+            (data.user_login,)
+        )
+        tuple_list = cursor.fetchall()
+
+    result = [item[0] for item in tuple_list]
+    categories_opt = ["restaurant", "cafe", "grocery", "clothing"]
+    optimal_opt = ["yes", "no"]
+
+    list_of_dicts = []
+
+    for cat in categories_opt: 
+        # Выбираем случайную категорию и оптимальность
+        bank_name = random.choice(result)
+        category = cat
+        # Создаем словарь
+        data_dict = {
+            "category": category,
+            "bank": bank_name,
+            "predicted": "no"
+        }
+        # Добавляем в список
+        list_of_dicts.append(data_dict)
+
+    list_of_dicts[0]["predicted"] = "yes"
+    return list_of_dicts
